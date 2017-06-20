@@ -12,7 +12,6 @@ import scala.util.control.Breaks.breakable
 
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
-import org.apache.spark.storage.StorageLevel
 
 import main.scala.Configuration.Config
 import main.scala.CoocurrenceGraph.Graph
@@ -71,7 +70,7 @@ class GraphBuilder extends Serializable {
         arrEdges = graphTemp.flatMap(row => {
           //println("From Edge: " + row._1)
           val fromVerID = frequentVertices.find(_._1.equals(row._1)).get._2
-          var arrEdge = ArrayBuffer[(Int,(Int, Int))]()
+          var arrEdge = ArrayBuffer[(Int, (Int, Int))]()
           //println("ROW._2: " + row._2.mkString(", "))
           for (v <- row._2) {
             //println("vertex: " + v)
@@ -296,7 +295,7 @@ class GraphBuilder extends Serializable {
     }
 
     //    val rddDFSCode = Config.sparkContext.parallelize(arrEdgeCode)
-    //    rddDFSCode.persist(StorageLevel.MEMORY_AND_DISK)
+    //    rddDFSCode.persist(Config.defaultStorageLevel)
     //    var tempEdges = rddDFSCode.map(ec => (ec.vFrom, ec.vTo, ec.lbFrom, ec.lbEdge, ec.lbTo))
     //    var tempVertices = rddDFSCode.flatMap(ec => Map((ec.vFrom -> ec.lbFrom), (ec.vTo -> ec.lbTo)))
 
@@ -361,7 +360,7 @@ class GraphBuilder extends Serializable {
       if (support >= minSupport) {
         s += new FinalDFSCode(dfsCode.arrEdgeCode, support)
         val (childrenGraphSet, childrenCounting) = enumerateSubGraph(graphSet, dfsCode)
-        //childrenCounting.persist(StorageLevel.MEMORY_AND_DISK)
+        //childrenCounting.persist(Config.defaultStorageLevel)
 
         val forwardMapping = dfsCode.arrEdgeCode //Config.sparkContext.parallelize(dfsCode.arrEdgeCode)
           .filter(ec => ec.vFrom < ec.vTo)
@@ -401,7 +400,7 @@ class GraphBuilder extends Serializable {
 
     val rddDFSCodeGraphSet = Config.sparkContext.parallelize(dfsCode.graphSet)
     val result = rddDFSCodeGraphSet.map(gs => aux(gs._1, Map[Int, Int]() ++ gs._2, rightMostPath))
-    result.persist(StorageLevel.MEMORY_AND_DISK)
+    //result.persist(Config.defaultStorageLevel)
 
     /*val childrenGraphSet = new HashMap[(Int, Int, Int, Int, Int), ListBuffer[(Int, Map[Int, Int])]]
     val graphIdSet = new HashMap[(Int, Int, Int, Int, Int), HashSet[Int]]
@@ -449,11 +448,14 @@ class GraphBuilder extends Serializable {
         (childrenGraphSet, graphIdSet)
       }
     }
-    childGraphSetTemp.persist(StorageLevel.MEMORY_AND_DISK)
+    childGraphSetTemp.persist(Config.defaultStorageLevel)
 
     val childrenGraphSet = Map[(Int, Int, Int, Int, Int), ListBuffer[(Int, Map[Int, Int])]]() ++ childGraphSetTemp.flatMap(_._1).reduceByKey((a, b) => a ++= b).collectAsMap()
 
     val childrenCount = Map[(Int, Int, Int, Int, Int), Int]() ++ childGraphSetTemp.flatMap(_._2).reduceByKey((a, b) => a ++= b).map(pair => (pair._1, pair._2.size)).collectAsMap()
+    
+    childGraphSetTemp.unpersist()
+    
     (childrenGraphSet, childrenCount)
   }
 }

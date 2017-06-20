@@ -1,16 +1,19 @@
 package main.scala.Main
 
-import main.scala.gSpan.gSpan
-import main.scala.CoocurrenceGraph.CoocurrenceGraph
 import scala.collection.mutable.ListBuffer
-import main.scala.gSpan.FinalDFSCode
-import main.scala.Output.OutputtoHDFS
-import main.scala.Configuration.Config
+
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.storage.StorageLevel
+
+import main.scala.Configuration.Config
+import main.scala.CoocurrenceGraph.CoocurrenceGraph
 import main.scala.CoocurrenceGraph.TestGraph
 import main.scala.ExecutionTime.Timer
+import main.scala.Output.OutputtoHDFS
+import main.scala.gSpan.EdgeCode
+import main.scala.gSpan.FinalDFSCode
+import main.scala.gSpan.gSpan
 
 object MainProgram {
   def main(args: Array[String]) = {
@@ -23,6 +26,9 @@ object MainProgram {
         printHelp()
       } else if (args(0) == "--gSpan" || args(0) == "-gs") {
         Config.sparkConf = new SparkConf().setAppName("GraphBasedMining").setMaster("local[*]")
+        Config.sparkConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
+
         Config.sparkContext = new SparkContext(Config.sparkConf)
         Config.minSupport = args(2).toDouble
         //val cooccurrenceGraph = new CoocurrenceGraph
