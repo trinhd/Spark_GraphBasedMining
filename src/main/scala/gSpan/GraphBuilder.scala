@@ -398,32 +398,9 @@ class GraphBuilder extends Serializable {
 
     val rightMostPath = findRightMostPath(dfsCode)
 
-    val rddDFSCodeGraphSet = Config.sparkContext.parallelize(dfsCode.graphSet)
+    /*val rddDFSCodeGraphSet = Config.sparkContext.parallelize(dfsCode.graphSet)
     val result = rddDFSCodeGraphSet.map(gs => aux(gs._1, Map[Int, Int]() ++ gs._2, rightMostPath))
     //result.persist(Config.defaultStorageLevel)
-
-    /*val childrenGraphSet = new HashMap[(Int, Int, Int, Int, Int), ListBuffer[(Int, Map[Int, Int])]]
-    val graphIdSet = new HashMap[(Int, Int, Int, Int, Int), HashSet[Int]]
-    
-    for ((graphId, forwardGrowth, backwardGrowth) <- result) {
-      for ((growth, mapping) <- backwardGrowth) {
-        if (!childrenGraphSet.contains(growth)) {
-          childrenGraphSet.put(growth, new ListBuffer[(Int, Map[Int, Int])])
-          graphIdSet.put(growth, new HashSet[Int])
-        }
-        childrenGraphSet(growth) += ((graphId, mapping))
-        graphIdSet(growth) += graphId
-      }
-
-      for ((growth, mapping) <- forwardGrowth) {
-        if (!childrenGraphSet.contains(growth)) {
-          childrenGraphSet.put(growth, new ListBuffer[(Int, Map[Int, Int])])
-          graphIdSet.put(growth, new HashSet[Int])
-        }
-        childrenGraphSet(growth) += ((graphId, mapping))
-        graphIdSet(growth) += graphId
-      }
-    }*/
 
     val childGraphSetTemp = result.map {
       case (graphId, forwardGrowth, backwardGrowth) => {
@@ -453,9 +430,37 @@ class GraphBuilder extends Serializable {
     val childrenGraphSet = Map[(Int, Int, Int, Int, Int), ListBuffer[(Int, Map[Int, Int])]]() ++ childGraphSetTemp.flatMap(_._1).reduceByKey((a, b) => a ++= b).collectAsMap()
 
     val childrenCount = Map[(Int, Int, Int, Int, Int), Int]() ++ childGraphSetTemp.flatMap(_._2).reduceByKey((a, b) => a ++= b).map(pair => (pair._1, pair._2.size)).collectAsMap()
-    
+
     childGraphSetTemp.unpersist()
-    
+
+    (childrenGraphSet, childrenCount)*/
+
+    val result = dfsCode.graphSet.map(gs => aux(gs._1, Map[Int, Int]() ++ gs._2, rightMostPath))
+
+    val childrenGraphSet = new HashMap[(Int, Int, Int, Int, Int), ListBuffer[(Int, Map[Int, Int])]]
+    val graphIdSet = new HashMap[(Int, Int, Int, Int, Int), HashSet[Int]]
+
+    for ((graphId, forwardGrowth, backwardGrowth) <- result) {
+      for ((growth, mapping) <- backwardGrowth) {
+        if (!childrenGraphSet.contains(growth)) {
+          childrenGraphSet.put(growth, new ListBuffer[(Int, Map[Int, Int])])
+          graphIdSet.put(growth, new HashSet[Int])
+        }
+        childrenGraphSet(growth) += ((graphId, mapping))
+        graphIdSet(growth) += graphId
+      }
+
+      for ((growth, mapping) <- forwardGrowth) {
+        if (!childrenGraphSet.contains(growth)) {
+          childrenGraphSet.put(growth, new ListBuffer[(Int, Map[Int, Int])])
+          graphIdSet.put(growth, new HashSet[Int])
+        }
+        childrenGraphSet(growth) += ((graphId, mapping))
+        graphIdSet(growth) += graphId
+      }
+    }
+
+    val childrenCount = graphIdSet.map(pair => (pair._1, pair._2.size))
     (childrenGraphSet, childrenCount)
   }
 }

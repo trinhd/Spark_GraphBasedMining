@@ -1,0 +1,1 @@
+bin/spark-submit --verbose --driver-memory 7G --executor-memory 5G --conf "spark.kryoserializer.buffer.max = 200m" --class main.scala.Main.MainProgram /mnt/Education/workspace/Spark_GraphBasedMining/target/scala-2.11/graphbasedmining_2.11-0.1.jar -gs /input/newdata 0.5 /newdata_res > ~/Desktop/logs
