@@ -31,10 +31,10 @@ object MainProgram {
 
         Config.sparkContext = new SparkContext(Config.sparkConf)
         Config.minSupport = args(2).toDouble
-        //val cooccurrenceGraph = new CoocurrenceGraph
-        //val rddGraphs = cooccurrenceGraph.createCoocurrenceGraphSet(args(1))
-        val testGraph = new TestGraph
-        val (createGraphTime, rddGraphs) = Timer.timer(testGraph.createTestGraphSet(args(1)))
+        val cooccurrenceGraph = new CoocurrenceGraph
+        val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSet(args(1)))
+        //val testGraph = new TestGraph
+        //val (createGraphTime, rddGraphs) = Timer.timer(testGraph.createTestGraphSet(args(1)))
         rddGraphs.persist(StorageLevel.MEMORY_AND_DISK)
 
         val gspan = new gSpan
