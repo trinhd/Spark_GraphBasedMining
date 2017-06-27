@@ -33,6 +33,7 @@ object MainProgram {
         Config.minSupport = args(2).toDouble
         val cooccurrenceGraph = new CoocurrenceGraph
         val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSet(args(1)))
+        //cooccurrenceGraph.printTenGraphs(rddGraphs)
         //val testGraph = new TestGraph
         //val (createGraphTime, rddGraphs) = Timer.timer(testGraph.createTestGraphSet(args(1)))
         rddGraphs.persist(StorageLevel.MEMORY_AND_DISK)
@@ -64,11 +65,15 @@ object MainProgram {
     var resString = ""
     val iCount = dfsFinalCode.length + frequentVertices.length
     resString += iCount + " đồ thị con phổ biến.\n"
-    resString += "Trong đó có " + frequentVertices.length + " đỉnh phổ biến.\n"
-    resString += "Và " + dfsFinalCode.length + " đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\nCác đỉnh phổ biến là:\n"
-    resString += frequentVertices.map(v => v._1).mkString("\n")
-    resString += "\nCác đồ thị con phổ biến là: \n"
-    resString += dfsFinalCode.zipWithIndex.map { case (code, index) => code.extractInfo(index, frequentVertices) }.mkString("\n")
+    if (frequentVertices.length > 0) {
+      resString += "Trong đó có " + frequentVertices.length + " đỉnh phổ biến.\n"
+      resString += "Và " + dfsFinalCode.length + " đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\nCác đỉnh phổ biến là:\n"
+      resString += frequentVertices.map(v => v._1).mkString("\n")
+      if (dfsFinalCode.length > 0) {
+        resString += "\nCác đồ thị con phổ biến là: \n"
+        resString += dfsFinalCode.zipWithIndex.map { case (code, index) => code.extractInfo(index, frequentVertices) }.mkString("\n")
+      }
+    }
     resString
   }
 

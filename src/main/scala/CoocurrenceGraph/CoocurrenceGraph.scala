@@ -19,4 +19,16 @@ class CoocurrenceGraph {
     })
     rddGraph
   }
+  
+  def printTenGraphs(graphs: RDD[Graph]) = {
+    val graphCol = graphs.collect
+    
+    for (i <- 0 to 9) {
+      val g = graphCol(i)
+      g.Graph.foreach(r => {
+        println("Đỉnh: " + r._1.toString())
+        println("Kết nối với các đỉnh khác: " + r._2.mkString(", "))
+      })
+    }
+  }
 }
