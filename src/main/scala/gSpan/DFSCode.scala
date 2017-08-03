@@ -11,11 +11,11 @@ class FinalDFSCode(val arrEdgeCode: Array[EdgeCode], val support: Int) extends S
     arrEdgeCode.foreach(ec => {
       if (sInfo.equals("")) {
         sInfo += "Đồ thị con số " + index + ":\n"
-        sVerTemp = verticesMapping.find(_._2.equals(ec.lbTo)).get._1
-        sInfo += verticesMapping.find(_._2.equals(ec.lbFrom)).get._1 + " ==> " + sVerTemp
+        sVerTemp = verticesMapping.find(_._2 == ec.lbTo).get._1
+        sInfo += verticesMapping.find(_._2 == ec.lbFrom).get._1 + " ==> " + sVerTemp
       } else {
-        val sVerStart = verticesMapping.find(_._2.equals(ec.lbFrom)).get._1
-        val sVerEnd = verticesMapping.find(_._2.equals(ec.lbTo)).get._1
+        val sVerStart = verticesMapping.find(_._2 == ec.lbFrom).get._1
+        val sVerEnd = verticesMapping.find(_._2 == ec.lbTo).get._1
         if (sVerStart.equals(sVerTemp))
           sInfo += " ==> " + sVerEnd
         else sInfo += ", " +sVerStart + " ==> " + sVerEnd

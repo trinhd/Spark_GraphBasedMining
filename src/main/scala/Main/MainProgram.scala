@@ -14,8 +14,13 @@ import main.scala.Output.OutputtoHDFS
 import main.scala.gSpan.EdgeCode
 import main.scala.gSpan.FinalDFSCode
 import main.scala.gSpan.gSpan
+import main.scala.CharacteristicGraph.CharacteristicExtract
 
 object MainProgram {
+  val appName = "GraphBasedMining"
+  val master = "local[*]"
+  val serializer = "org.apache.spark.serializer.KryoSerializer"
+  
   def main(args: Array[String]) = {
     println("**************************************************************")
     println("*        CHƯƠNG TRÌNH KHAI PHÁ CHỦ ĐỀ CỦA TẬP VĂN BẢN        *")
@@ -25,9 +30,9 @@ object MainProgram {
       if (args(0) == "--help" || args(0) == "-h") {
         printHelp()
       } else if (args(0) == "--gSpan" || args(0) == "-gs") {
-        Config.sparkConf = new SparkConf().setAppName("GraphBasedMining").setMaster("local[*]")
-        Config.sparkConf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-        Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
+        Config.sparkConf = new SparkConf().setAppName(appName).setMaster(master)
+        Config.sparkConf.set("spark.serializer", serializer)
+        if (serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
 
         Config.sparkContext = new SparkContext(Config.sparkConf)
         Config.minSupport = args(2).toDouble
@@ -48,6 +53,18 @@ object MainProgram {
         println(sRes)
         if (OutputtoHDFS.writeFile(args(3), sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + args(3))
         println("----------END----------")
+        Config.sparkContext.stop
+        
+      } else if (args(0) == "--characteristicExtract" || args(0) == "-ce") {
+        Config.sparkConf = new SparkConf().setAppName(appName).setMaster(master)
+        Config.sparkConf.set("spark.serializer", serializer)
+        if (serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
+
+        Config.sparkContext = new SparkContext(Config.sparkConf)
+        Config.minDistance = args(2).toDouble
+        val characteristicExtract = new CharacteristicExtract
+        val (extractTime, _) = Timer.timer(characteristicExtract.characteristicExtract(args(1), args(3)))
+        println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
         Config.sparkContext.stop
       } else {
         printHelp()
@@ -81,6 +98,7 @@ object MainProgram {
     println("Usage: ProgramJarFile [Option] [Arguments]")
     println("       Option:")
     println("              --gSpan -gs : Frequent Subgraph Mining Using gSpan Algorithm. Arguments: FolderInputPath MinSupport OutputFilePath")
+    println("              --characteristicExtract -ce : Extract topic characteristic. Arguments: FolderInputPath MinDistance FolderOutputPath")
     println("              --help -h : Print this help")
   }
 }

@@ -46,6 +46,37 @@ class Graph extends Serializable {
     sRes
   }
 
+  def printGraphMini(): String = {
+    var graphTemp = Graph
+    var sRes = ""
+    var arrTemp = Array[String]()
+    var arrHis = Array[(String, Int)]()
+    sRes += graphTemp.head._1
+    arrTemp :+ graphTemp.head._2
+    arrHis :+ (graphTemp.head._1, graphTemp.head._2.length)
+    graphTemp.remove(graphTemp.head._1)
+    while (!arrTemp.isEmpty) {
+      if (arrHis.last._2 != 0) {
+        arrHis(arrHis.length - 1) = (arrHis.last._1, arrHis.last._2 - 1)
+      } else {
+        arrHis = arrHis.take(arrHis.length - 1)
+        sRes += ", " + arrHis.last._1
+      }
+      val te = arrTemp.last
+      arrTemp = arrTemp.take(arrTemp.length - 1)
+      sRes += " ==> " + te
+      val children = graphTemp.get(te).get
+      graphTemp.remove(te)
+      if (children != None) {
+        arrTemp :+ children
+        arrHis :+ (te, children.length)
+      } else {
+        arrHis :+ (te, 0)
+      }
+    }
+    sRes
+  }
+
   def jsonGraph(): String = {
     var sRes = "{\n\"nodes\": [\n"
     var sLinks = "\n],\n\"links\": [\n"

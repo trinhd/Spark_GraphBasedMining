@@ -1,1 +1,3 @@
 bin/spark-submit --verbose --driver-memory 7G --executor-memory 5G --conf "spark.kryoserializer.buffer.max = 200m" --class main.scala.Main.MainProgram /mnt/Education/workspace/Spark_GraphBasedMining/target/scala-2.11/graphbasedmining_2.11-0.1.jar -gs /input/newdata 0.5 /newdata_res > ~/Desktop/logs
+
+bin/spark-submit --verbose --driver-memory 9G --executor-memory 9G --conf "spark.kryoserializer.buffer.max = 2g" --class main.scala.Main.MainProgram /mnt/Education/workspace/Spark_GraphBasedMining/target/scala-2.11/graphbasedmining_2.11-0.1.jar -gs /RemovedStopWords/DuLich_toked_rmstwd 0.5 /dulich_res > ~/Desktop/dulich.log
