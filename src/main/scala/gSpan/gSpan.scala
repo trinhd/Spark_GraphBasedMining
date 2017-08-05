@@ -30,7 +30,8 @@ class gSpan {
 
     val s = new ListBuffer[FinalDFSCode]
     val frequentVertices = graphBuilder.filterFrequentVertex(rddGraphs, minSupInt).collect()
-
+    
+    if (!frequentVertices.isEmpty) {
     val (reconstructedGraph, frequentEdges) = graphBuilder.reconstructGraphSet(rddGraphsIndexed, Config.sparkContext.broadcast(frequentVertices))
     reconstructedGraph.persist(Config.defaultStorageLevel)
 
@@ -61,6 +62,9 @@ class gSpan {
       graphSet = graphBuilder.shrink(Config.sparkContext.parallelize(graphSet), Config.sparkContext.broadcast(edgeCode)).collect()
     }
 
-    (s, frequentVertices)
+    (s, frequentVertices)}
+    else {
+      (new ListBuffer[FinalDFSCode], Array[(String, Int)]())
+    }
   }
 }

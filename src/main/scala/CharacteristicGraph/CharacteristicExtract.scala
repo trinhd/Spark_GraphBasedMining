@@ -5,6 +5,7 @@ import main.scala.Configuration.Config
 import main.scala.gSpan.gSpan
 import main.scala.Input.HDFSReader
 import main.scala.Output.OutputtoHDFS
+import scala.collection.mutable.ArrayBuffer
 
 class CharacteristicExtract {
   def characteristicExtract(folderPath: String, outputPath: String) = {
@@ -12,31 +13,46 @@ class CharacteristicExtract {
     val arrFreq = rddDoc.map {
       case (link, doc) => {
         val output_link = outputPath + "/" + link.split("/").last + "_filted"
-        var arrOne = Array[String]()
-        var arrGraph = Array[Graph]()
+        var arrOne = ArrayBuffer[String]()
+        var arrGraph = ArrayBuffer[Graph]()
         val arrLine = doc.split("\n")
         var i = 0
         while (i < arrLine.length - 4) {
-          if (arrLine(i).equals("Các đỉnh phổ biến là:")) {
+          if (arrLine(i).contains("Các đỉnh phổ biến là:")) {
             i = i + 1
-            while (!arrLine(i).equals("Các đồ thị con phổ biến là:") && (i < arrLine.length - 4)) {
-              arrOne :+ arrLine(i)
+            while (!arrLine(i).contains("Các đồ thị con phổ biến là:") && (i < arrLine.length - 4)) {
+              arrOne += arrLine(i)
               i = i + 1
             }
-            if (arrLine(i).equals("Các đồ thị con phổ biến là:")) {
-              i = i + 2
-              while (i < arrLine.length - 5) {
-                if (arrLine(i).contains("==>")) {
-                  var gr = new Graph
+            if (arrLine(i).contains("Các đồ thị con phổ biến là:")) {
+              i = i + 1
+              var fNewGraph = true
+              var gr: Graph = null
+              while (i < arrLine.length - 4) {
+                if (arrLine(i) contains "Đồ thị con số ") {
+                  if (!fNewGraph) {
+                    arrGraph += gr
+                  }
+                  fNewGraph = true
+                  gr = new Graph
+                }
+                if (arrLine(i) contains "==>") {
+                  fNewGraph = false
                   val arrTemp = arrLine(i).split("==>").map(_.trim)
                   var j = 0
-                  while (j < arrTemp.length - 2) {
+                  while (j < arrTemp.length - 1) {
                     gr.addOrUpdateVertex(arrTemp(j), arrTemp(j + 1))
                     j = j + 1
                   }
-                  arrGraph :+ gr
+                  //println("gr count: " + gr.Graph.size)
+                  //arrGraph += gr
+                  //println("arrGraph: " + arrGraph.length)
                 }
-                i = i + 3
+                i = i + 1
+                if (i == arrLine.length - 5) {
+                  arrGraph += gr
+                  i = i + 1
+                }
               }
             }
           }
@@ -45,18 +61,20 @@ class CharacteristicExtract {
         (output_link, arrOne, arrGraph)
       }
     }.collect()
-    
-    var arrFinalRes = new Array[(String, Array[String], Array[Graph])](arrFreq.length)
+
+    var arrFinalRes = new Array[(String, ArrayBuffer[String], ArrayBuffer[Graph])](arrFreq.length)
+
+    //println("ARRFREQ LENGTH: " + arrFreq.length + ", ARRFINALRES LENGTH: " + arrFinalRes.length)
 
     //var arrMatrixRes = Array[(Int, Int, Int, Int, Double)]()
     var i = 0
-    while (i < arrFreq.length - 1) {
+    while (i < arrFreq.length) {
       var arrOne = arrFreq(i)._2
       var arrGraph = arrFreq(i)._3.map((_, 1d)) //arrFreq(i)._3
       var j = 0
-      while (j < arrFreq.length - 1) {
+      while (j < arrFreq.length) {
         if (i != j) {
-          arrOne = arrOne.diff(arrFreq(j)._2)
+          arrOne --= arrFreq(j)._2
           /*arrFinalRes(i) = (arrFreq(i)._1, arrOne, null)
           
           var arrGraphCompute = arrFreq(j)._3
@@ -68,11 +86,11 @@ class CharacteristicExtract {
               }
             }
           }*/
-          
+
           var arrGraphCompute = arrFreq(j)._3
           var x, y = 0
-          while (x < arrGraph.length - 1) {
-            while (y < arrGraphCompute.length - 1) {
+          while (x < arrGraph.length) {
+            while (y < arrGraphCompute.length) {
               val distance = graphDistance(arrGraph(x)._1, arrGraphCompute(y))
               if (distance < arrGraph(x)._2) {
                 arrGraph(x) = (arrGraph(x)._1, distance)
@@ -82,26 +100,33 @@ class CharacteristicExtract {
         }
         j = j + 1
       }
+      println("TRUOC FILT: " + arrGraph.length)
+      println("SAU FILT: " + arrGraph.filter(_._2 > Config.minDistance).length)
       arrFinalRes(i) = (arrFreq(i)._1, arrOne, arrGraph.filter(_._2 > Config.minDistance).map(_._1))
       i = i + 1
     }
-    
+
     /*i = 0
     while (i < arrFreq.length - 1){
       i = i + 1
     }*/
-    
-    for (t <- arrFinalRes){
-      var s = (t._2.length + t._3.length) + " đồ thị con phổ biến.\n"
-      s += "Trong đó có "+ t._2.length +" đỉnh phổ biến.\n"
-      if (!t._3.isEmpty) s += "Và "+ t._3.length +" đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\n"
+
+    for (t <- arrFinalRes) { //.filterNot(_ == null)){
+      //if (t._2 == null) println(t._1 + " co arrOne null.")
+      //if (t._3 == null) println(t._1 + " co arrGraph null.")
+      println("t._3.length: " + t._3.length)
+      println("t._3.isEmpty: " + t._3.isEmpty.toString)
+      var s = ((t._2.length + t._3.length)) + " đồ thị con phổ biến.\n"
+      s += "Trong đó có " + t._2.length + " đỉnh phổ biến.\n"
+      if (!t._3.isEmpty) s += "Và " + t._3.length + " đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\n"
       s += "Các đỉnh phổ biến là:\n"
       s += t._2.mkString("\n")
-      if (!t._3.isEmpty){
+      if (!t._3.isEmpty) {
+        println("Co thuc thi!!!")
         s += "\nCác đồ thị con phổ biến là:"
         var n = 0
-        while (n < t._3.length - 1){
-          s += "\nĐồ thị con số "+ n +":\n"
+        while (n < t._3.length) {
+          s += "\nĐồ thị con số " + n + ":\n"
           s += t._3(n).printGraphMini()
           n = n + 1
         }
