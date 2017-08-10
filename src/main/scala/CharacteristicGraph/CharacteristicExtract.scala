@@ -6,6 +6,7 @@ import main.scala.gSpan.gSpan
 import main.scala.Input.HDFSReader
 import main.scala.Output.OutputtoHDFS
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 class CharacteristicExtract {
   def characteristicExtract(folderPath: String, outputPath: String) = {
@@ -64,65 +65,49 @@ class CharacteristicExtract {
 
     var arrFinalRes = new Array[(String, ArrayBuffer[String], ArrayBuffer[Graph])](arrFreq.length)
 
-    //println("ARRFREQ LENGTH: " + arrFreq.length + ", ARRFINALRES LENGTH: " + arrFinalRes.length)
+    var arrMatrixRes = ListBuffer[(Int, Int, Int, Int, Double)]()
 
-    //var arrMatrixRes = Array[(Int, Int, Int, Int, Double)]()
-    var i = 0
-    while (i < arrFreq.length) {
+    for (i <- 0 until arrFreq.length) {
       var arrOne = arrFreq(i)._2
       var arrGraph = arrFreq(i)._3.map((_, 1d)) //arrFreq(i)._3
-      var j = 0
-      while (j < arrFreq.length) {
+      for (j <- 0 until arrFreq.length) {
         if (i != j) {
           arrOne --= arrFreq(j)._2
-          /*arrFinalRes(i) = (arrFreq(i)._1, arrOne, null)
-          
-          var arrGraphCompute = arrFreq(j)._3
-          var x, y = 0
-          while (x < arrGraph.length - 1) {
-            while (y < arrGraphCompute.length - 1) {
-              if (!arrMatrixRes.exists(_._1 == j) || !arrMatrixRes.exists(_._2 == i) || !arrMatrixRes.exists(_._3 == y) || !arrMatrixRes.exists(_._4 == x)) {
-                arrMatrixRes :+ (i, j, x, y, graphDistance(arrGraph(x), arrGraphCompute(y)))
-              }
-            }
-          }*/
 
           var arrGraphCompute = arrFreq(j)._3
-          var x, y = 0
-          while (x < arrGraph.length) {
-            while (y < arrGraphCompute.length) {
-              val distance = graphDistance(arrGraph(x)._1, arrGraphCompute(y))
+          for (x <- 0 until arrGraph.length) {
+            for (y <- 0 until arrGraphCompute.length) {
+              var distance = 1d
+              if (!arrMatrixRes.exists(e => (e._1 == j && e._2 == i))) {
+                distance = graphDistance(arrGraph(x)._1, arrGraphCompute(y))
+                arrMatrixRes += ((i, j, x, y, distance))
+              } else {
+                distance = arrMatrixRes.find(e => (e._1 == j && e._2 == i && e._3 == y && e._4 == x)).get._5
+              }
               if (distance < arrGraph(x)._2) {
                 arrGraph(x) = (arrGraph(x)._1, distance)
               }
             }
           }
         }
-        j = j + 1
       }
-      println("TRUOC FILT: " + arrGraph.length)
-      println("SAU FILT: " + arrGraph.filter(_._2 > Config.minDistance).length)
+      //println("TRUOC FILT: " + arrGraph.length)
+      //println("SAU FILT: " + arrGraph.filter(_._2 > Config.minDistance).length)
       arrFinalRes(i) = (arrFreq(i)._1, arrOne, arrGraph.filter(_._2 > Config.minDistance).map(_._1))
-      i = i + 1
     }
-
-    /*i = 0
-    while (i < arrFreq.length - 1){
-      i = i + 1
-    }*/
 
     for (t <- arrFinalRes) { //.filterNot(_ == null)){
       //if (t._2 == null) println(t._1 + " co arrOne null.")
       //if (t._3 == null) println(t._1 + " co arrGraph null.")
-      println("t._3.length: " + t._3.length)
-      println("t._3.isEmpty: " + t._3.isEmpty.toString)
+      //println("t._3.length: " + t._3.length)
+      //println("t._3.isEmpty: " + t._3.isEmpty.toString)
       var s = ((t._2.length + t._3.length)) + " đồ thị con phổ biến.\n"
       s += "Trong đó có " + t._2.length + " đỉnh phổ biến.\n"
       if (!t._3.isEmpty) s += "Và " + t._3.length + " đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\n"
       s += "Các đỉnh phổ biến là:\n"
       s += t._2.mkString("\n")
       if (!t._3.isEmpty) {
-        println("Co thuc thi!!!")
+        //println("Co thuc thi!!!")
         s += "\nCác đồ thị con phổ biến là:"
         var n = 0
         while (n < t._3.length) {

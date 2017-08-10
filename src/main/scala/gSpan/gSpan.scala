@@ -30,40 +30,41 @@ class gSpan {
 
     val s = new ListBuffer[FinalDFSCode]
     val frequentVertices = graphBuilder.filterFrequentVertex(rddGraphs, minSupInt).collect()
-    
-    if (!frequentVertices.isEmpty) {
-    val (reconstructedGraph, frequentEdges) = graphBuilder.reconstructGraphSet(rddGraphsIndexed, Config.sparkContext.broadcast(frequentVertices))
-    reconstructedGraph.persist(Config.defaultStorageLevel)
 
-    /*reconstructedGraph.foreach(g => {
+    if (!frequentVertices.isEmpty) {
+      val (reconstructedGraph, frequentEdges) = graphBuilder.reconstructGraphSet(rddGraphsIndexed, Config.sparkContext.broadcast(frequentVertices))
+      reconstructedGraph.persist(Config.defaultStorageLevel)
+
+      /*reconstructedGraph.foreach(g => {
       println("Đồ thị: " + g._1)
       println("Đỉnh: " + g._2.map(v => frequentVertices.find(_._2 == v).get._1).mkString(", "))
       println("Cạnh: " + g._3.map(tuple => frequentVertices.find(_._2 == tuple._1).get._1 + " => " + frequentVertices.find(_._2 == tuple._2).get._1).mkString(", "))
-    })
-    println("Cạnh phổ biến trong tập đồ thị là: ")
-    println(frequentEdges.map(e => frequentVertices.find(_._2 == e._1).get._1 + " => " + frequentVertices.find(_._2 == e._2).get._1).mkString("\n"))*/
+    	})
+    	println("Cạnh phổ biến trong tập đồ thị là: ")
+    	println(frequentEdges.map(e => frequentVertices.find(_._2 == e._1).get._1 + " => " + frequentVertices.find(_._2 == e._2).get._1).mkString("\n"))*/
 
-    val S1 = graphBuilder.buildOneEdgeCode(Config.sparkContext.parallelize(frequentEdges)).sortBy(_.lbFrom, true).collect()
-    val reconstructedGraphSet = reconstructedGraph.collect()
+      val S1 = graphBuilder.buildOneEdgeCode(Config.sparkContext.parallelize(frequentEdges)).sortBy(_.lbFrom, true).collect()
+      val reconstructedGraphSet = reconstructedGraph.collect()
 
-    for (edgeCode <- S1) {
-      val dfsGraphSet = graphBuilder.projectWithOneEdge(reconstructedGraph, Config.sparkContext.broadcast(edgeCode))
-      dfsGraphSet.persist(Config.defaultStorageLevel)
+      for (edgeCode <- S1) {
+        val dfsGraphSet = graphBuilder.projectWithOneEdge(reconstructedGraph, Config.sparkContext.broadcast(edgeCode))
+        dfsGraphSet.persist(Config.defaultStorageLevel)
 
-      val support = dfsGraphSet.map(_._1).distinct.count.toInt
+        val support = dfsGraphSet.map(_._1).distinct.count.toInt
 
-      val dfsCode = new DFSCode(Array(edgeCode), dfsGraphSet.collect().toList, support)
-      dfsGraphSet.unpersist()
+        val dfsCode = new DFSCode(Array(edgeCode), dfsGraphSet.collect().toList, support)
+        dfsGraphSet.unpersist()
 
-      var graphSet = reconstructedGraphSet.clone()
+        var graphSet = reconstructedGraphSet.clone()
 
-      graphBuilder.subgraphMining(graphSet, s, dfsCode, minSupInt)
+        graphBuilder.subgraphMining(graphSet, s, dfsCode, minSupInt)
 
-      graphSet = graphBuilder.shrink(Config.sparkContext.parallelize(graphSet), Config.sparkContext.broadcast(edgeCode)).collect()
-    }
+        graphSet = graphBuilder.shrink(Config.sparkContext.parallelize(graphSet), Config.sparkContext.broadcast(edgeCode)).collect()
+      }
 
-    (s, frequentVertices)}
-    else {
+      (s, frequentVertices)
+    } else {
+      //println("Dinh pho bien rong")
       (new ListBuffer[FinalDFSCode], Array[(String, Int)]())
     }
   }

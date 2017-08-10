@@ -17,10 +17,6 @@ import main.scala.gSpan.gSpan
 import main.scala.CharacteristicGraph.CharacteristicExtract
 
 object MainProgram {
-  val appName = "GraphBasedMining"
-  val master = "local[*]"
-  val serializer = "org.apache.spark.serializer.KryoSerializer"
-  
   def main(args: Array[String]) = {
     println("**************************************************************")
     println("*        CHƯƠNG TRÌNH KHAI PHÁ CHỦ ĐỀ CỦA TẬP VĂN BẢN        *")
@@ -30,17 +26,24 @@ object MainProgram {
       if (args(0) == "--help" || args(0) == "-h") {
         printHelp()
       } else if (args(0) == "--gSpan" || args(0) == "-gs") {
-        Config.sparkConf = new SparkConf().setAppName(appName).setMaster(master)
-        Config.sparkConf.set("spark.serializer", serializer)
-        if (serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
+        Config.sparkConf = new SparkConf().setAppName(Config.appName).setMaster(Config.master)
+        Config.sparkConf.set("spark.serializer", Config.serializer)
+        if (Config.serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
 
         Config.sparkContext = new SparkContext(Config.sparkConf)
         Config.minSupport = args(2).toDouble
+        //-----------GRAPH THẬT------------
         val cooccurrenceGraph = new CoocurrenceGraph
         val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSet(args(1)))
+        //---------------------------------
+        
         //cooccurrenceGraph.printTenGraphs(rddGraphs)
+        
+        //-----------GRAPH TEST------------
         //val testGraph = new TestGraph
         //val (createGraphTime, rddGraphs) = Timer.timer(testGraph.createTestGraphSet(args(1)))
+        //---------------------------------
+        
         rddGraphs.persist(StorageLevel.MEMORY_AND_DISK)
 
         val gspan = new gSpan
@@ -56,9 +59,9 @@ object MainProgram {
         Config.sparkContext.stop
         
       } else if (args(0) == "--characteristicExtract" || args(0) == "-ce") {
-        Config.sparkConf = new SparkConf().setAppName(appName).setMaster(master)
-        Config.sparkConf.set("spark.serializer", serializer)
-        if (serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
+        Config.sparkConf = new SparkConf().setAppName(Config.appName).setMaster(Config.master)
+        Config.sparkConf.set("spark.serializer", Config.serializer)
+        if (Config.serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
 
         Config.sparkContext = new SparkContext(Config.sparkConf)
         Config.minDistance = args(2).toDouble
