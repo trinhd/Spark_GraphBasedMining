@@ -47,14 +47,14 @@ class Graph extends Serializable {
   }
 
   def printGraphMini(): String = {
-    var graphTemp = Graph
+    var graphTemp = Graph.toArray.sortBy(-_._2.length).toBuffer
     var sRes = ""
     var arrTemp = ArrayBuffer[String]()
     var arrHis = ArrayBuffer[(String, Int)]()
     sRes += graphTemp.head._1
     arrTemp ++= graphTemp.head._2
     arrHis += ((graphTemp.head._1, graphTemp.head._2.length))
-    graphTemp.remove(graphTemp.head._1)
+    graphTemp.remove(0)
     while (!arrTemp.isEmpty) {
       if (arrHis.last._2 != 0) {
         arrHis(arrHis.length - 1) = (arrHis.last._1, arrHis.last._2 - 1)
@@ -65,8 +65,8 @@ class Graph extends Serializable {
       val te = arrTemp.last
       arrTemp = arrTemp.take(arrTemp.length - 1)
       sRes += " ==> " + te
-      val children = graphTemp.get(te).get
-      graphTemp.remove(te)
+      val children = graphTemp.find(_._1.equals(te)).get._2
+      graphTemp.remove(graphTemp.indexWhere(_._1.equals(te)))
       if (children != None) {
         arrTemp ++= children
         arrHis += ((te, children.length))

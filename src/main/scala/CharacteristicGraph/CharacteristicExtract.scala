@@ -45,9 +45,6 @@ class CharacteristicExtract {
                     gr.addOrUpdateVertex(arrTemp(j), arrTemp(j + 1))
                     j = j + 1
                   }
-                  //println("gr count: " + gr.Graph.size)
-                  //arrGraph += gr
-                  //println("arrGraph: " + arrGraph.length)
                 }
                 i = i + 1
                 if (i == arrLine.length - 5) {
@@ -91,23 +88,17 @@ class CharacteristicExtract {
           }
         }
       }
-      //println("TRUOC FILT: " + arrGraph.length)
-      //println("SAU FILT: " + arrGraph.filter(_._2 > Config.minDistance).length)
+      
       arrFinalRes(i) = (arrFreq(i)._1, arrOne, arrGraph.filter(_._2 > Config.minDistance).map(_._1))
     }
 
-    for (t <- arrFinalRes) { //.filterNot(_ == null)){
-      //if (t._2 == null) println(t._1 + " co arrOne null.")
-      //if (t._3 == null) println(t._1 + " co arrGraph null.")
-      //println("t._3.length: " + t._3.length)
-      //println("t._3.isEmpty: " + t._3.isEmpty.toString)
+    for (t <- arrFinalRes) {
       var s = ((t._2.length + t._3.length)) + " đồ thị con phổ biến.\n"
       s += "Trong đó có " + t._2.length + " đỉnh phổ biến.\n"
       if (!t._3.isEmpty) s += "Và " + t._3.length + " đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\n"
       s += "Các đỉnh phổ biến là:\n"
       s += t._2.mkString("\n")
       if (!t._3.isEmpty) {
-        //println("Co thuc thi!!!")
         s += "\nCác đồ thị con phổ biến là:"
         var n = 0
         while (n < t._3.length) {
