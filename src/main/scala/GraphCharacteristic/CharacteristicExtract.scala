@@ -1,4 +1,4 @@
-package main.scala.CharacteristicGraph
+package main.scala.GraphCharacteristic
 
 import main.scala.CoocurrenceGraph.Graph
 import main.scala.Configuration.Config
@@ -103,7 +103,7 @@ class CharacteristicExtract {
         var n = 0
         while (n < t._3.length) {
           s += "\nĐồ thị con số " + n + ":\n"
-          s += t._3(n).printGraphMini()
+          s += t._3(n).printGraphMatrix()
           n = n + 1
         }
       }

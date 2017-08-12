@@ -14,7 +14,7 @@ import main.scala.Output.OutputtoHDFS
 import main.scala.gSpan.EdgeCode
 import main.scala.gSpan.FinalDFSCode
 import main.scala.gSpan.gSpan
-import main.scala.CharacteristicGraph.CharacteristicExtract
+import main.scala.GraphCharacteristic.CharacteristicExtract
 
 object MainProgram {
   def main(args: Array[String]) = {

@@ -76,6 +76,14 @@ class Graph extends Serializable {
     }
     sRes
   }
+  
+  def printGraphMatrix(): String = {
+    var sRes = ""
+    Graph.foreach(e => {
+      sRes += e._1 + " ==> " + (if (e._2.isEmpty) "{}" else e._2.mkString(", ")) + "\n"
+    })
+    sRes
+  }
 
   def jsonGraph(): String = {
     var sRes = "{\n\"nodes\": [\n"
