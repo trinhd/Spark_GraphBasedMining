@@ -13,18 +13,18 @@ class Vectorization {
         var arrTemp = ArrayBuffer[(Long, String)]()
         val arrLine = doc.split("\n")
         var i = 0
-        while (i < arrLine.length - 4) {
+        while (i < arrLine.length) {
           if (arrLine(i).contains("Các đỉnh phổ biến là:")) {
             i = i + 1
-            while (!arrLine(i).contains("Các đồ thị con phổ biến là:") && (i < arrLine.length)) {
+            while ((i < arrLine.length) && !arrLine(i).contains("Các đồ thị con phổ biến là:")) {
               arrTemp += ((id, arrLine(i)))
               i = i + 1
             }
-            if (arrLine(i).contains("Các đồ thị con phổ biến là:")) {
+            if ((i < arrLine.length) && arrLine(i).contains("Các đồ thị con phổ biến là:")) {
               i = i + 1
               var fNewGraph = true
               var sGraph = ""
-              while (i < arrLine.length - 1) {
+              while (i < arrLine.length) {
                 if (arrLine(i) contains "Đồ thị con số ") {
                   if (!fNewGraph) {
                     arrTemp += ((id, sGraph))
@@ -34,11 +34,11 @@ class Vectorization {
                 }
                 if (arrLine(i) contains "==>") {
                   if (!sGraph.equals("")) sGraph += " :: " + arrLine(i) else sGraph = arrLine(i)
+                  fNewGraph = false
                 }
                 i = i + 1
-                if (i == arrLine.length - 5) {
+                if (i == arrLine.length) {
                   arrTemp += ((id, sGraph))
-                  i = i + 1
                 }
               }
             }
