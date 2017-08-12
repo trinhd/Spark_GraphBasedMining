@@ -15,6 +15,7 @@ import main.scala.gSpan.EdgeCode
 import main.scala.gSpan.FinalDFSCode
 import main.scala.gSpan.gSpan
 import main.scala.GraphCharacteristic.CharacteristicExtract
+import main.scala.TopicDiscovery.Vectorization
 
 object MainProgram {
   def main(args: Array[String]) = {
@@ -69,6 +70,16 @@ object MainProgram {
         val (extractTime, _) = Timer.timer(characteristicExtract.characteristicExtract(args(1), args(3)))
         println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
         Config.sparkContext.stop
+      } else if (args(0) == "--createDictionary" || args(0) == "-cd") {
+        Config.sparkConf = new SparkConf().setAppName(Config.appName).setMaster(Config.master)
+        Config.sparkConf.set("spark.serializer", Config.serializer)
+        if (Config.serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
+
+        Config.sparkContext = new SparkContext(Config.sparkConf)
+        val vectorization = new Vectorization
+        val (extractTime, _) = Timer.timer(vectorization.createDictionary(args(1), args(2)))
+        println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
+        Config.sparkContext.stop
       } else {
         printHelp()
       }
@@ -102,6 +113,7 @@ object MainProgram {
     println("       Option:")
     println("              --gSpan -gs : Frequent Subgraph Mining Using gSpan Algorithm. Arguments: FolderInputPath MinSupport OutputFilePath")
     println("              --characteristicExtract -ce : Extract topic characteristic. Arguments: FolderInputPath MinDistance FolderOutputPath")
+    println("              --createDictionary -cd : Create dictionary from all topic characteristic. Arguments: FolderInputPath OutputFilePath")
     println("              --help -h : Print this help")
   }
 }

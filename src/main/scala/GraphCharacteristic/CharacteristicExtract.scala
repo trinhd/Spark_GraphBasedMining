@@ -38,12 +38,15 @@ class CharacteristicExtract {
                   gr = new Graph
                 }
                 if (arrLine(i) contains "==>") {
+                  val arrBranch = arrLine(i).split(",")
                   fNewGraph = false
-                  val arrTemp = arrLine(i).split("==>").map(_.trim)
-                  var j = 0
-                  while (j < arrTemp.length - 1) {
-                    gr.addOrUpdateVertex(arrTemp(j), arrTemp(j + 1))
-                    j = j + 1
+                  for (branch <- arrBranch) {
+                    val arrTemp = branch.split("==>").map(_.trim)
+                    var j = 0
+                    while (j < arrTemp.length - 1) {
+                      gr.addOrUpdateVertex(arrTemp(j), arrTemp(j + 1))
+                      j = j + 1
+                    }
                   }
                 }
                 i = i + 1
@@ -88,7 +91,7 @@ class CharacteristicExtract {
           }
         }
       }
-      
+
       arrFinalRes(i) = (arrFreq(i)._1, arrOne, arrGraph.filter(_._2 > Config.minDistance).map(_._1))
     }
 
