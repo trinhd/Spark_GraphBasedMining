@@ -3,6 +3,7 @@ package main.scala.TopicDiscovery
 import main.scala.Input.HDFSReader
 import scala.collection.mutable.ArrayBuffer
 import main.scala.Output.OutputtoHDFS
+import scala.Array
 
 class Vectorization {
   def createDictionary(folderPath: String, outputPath: String) = {
@@ -49,7 +50,22 @@ class Vectorization {
       }
     }.sortBy(_._1, true).zipWithIndex()
     
-    sFinalRes += rddDoc.map(e => e._2 + " ==> " + e._1._1).collect().mkString("\n") + "\n" + "Dimension ID:\n" + rddDic.map(e => e._2 + " || " + e._1._1 + " || " + e._1._2).collect().mkString("\n")
+    val vectorLength = rddDic.count()
+    
+    val rddVector = rddDic.map(e => (e._1._1, e._2)).groupByKey().map(e => {
+      var min = Long.MaxValue
+      e._2.foreach(l => {
+        if (l < min) min = l
+      })
+      var vector = Array.fill(min.toInt)(0) ++ Array.fill(e._2.size)(1) ++ Array.fill(vectorLength.toInt - min.toInt - e._2.size)(0)
+      var sVector = e._1 + " ==> " + vector.mkString(", ")
+      sVector
+    })
+    
+    sFinalRes += rddDoc.map(e => e._2 + " ==> " + e._1._1).collect().mkString("\n") + "\n"
+    sFinalRes += "Dimension ID:\n" + rddDic.map(e => e._2 + " || " + e._1._1 + " || " + e._1._2).collect().mkString("\n") + "\n"
+    sFinalRes += "Topic Vector:\n" + rddVector.collect().mkString("\n")
+    
     if (OutputtoHDFS.writeFile(outputPath, sFinalRes)) println("Kết quả tính được ghi thành công xuống tập tin " + outputPath)
     println(sFinalRes)
   }
