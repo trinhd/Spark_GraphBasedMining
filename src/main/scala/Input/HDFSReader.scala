@@ -9,8 +9,18 @@ object HDFSReader {
    * @param inputPath đường dẫn đến thư mục chứa dữ liệu
    * @return RDD gồm 2 thành phần đường dẫn đến tập tin và nội dung tập tin
    */
-  def hdfsReader(inputPath: String): RDD[(String, String)] = {
+  def hdfsFolderReader(inputPath: String): RDD[(String, String)] = {
     val rdd = Config.sparkContext.wholeTextFiles(inputPath)
+    rdd
+  }
+
+  /**
+   * Hàm đọc tập tin từ đường dẫn HDFS đầu vào
+   * @param inputPath đường dẫn đến tập tin cần đọc
+   * @return RDD chứa tập hợp các dòng trong tập tin
+   */
+  def hdfsFileReader(inputPath: String): RDD[String] = {
+    val rdd = Config.sparkContext.textFile(inputPath)
     rdd
   }
 }

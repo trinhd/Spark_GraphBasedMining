@@ -16,6 +16,7 @@ import main.scala.gSpan.FinalDFSCode
 import main.scala.gSpan.gSpan
 import main.scala.GraphCharacteristic.CharacteristicExtract
 import main.scala.TopicDiscovery.Vectorization
+import main.scala.TopicDiscovery.TopicDiscovery
 
 object MainProgram {
   def main(args: Array[String]) = {
@@ -26,62 +27,61 @@ object MainProgram {
       //đọc vào các biến môi trường để thực hiện các chức năng cần thiết
       if (args(0) == "--help" || args(0) == "-h") {
         printHelp()
-      } else if (args(0) == "--gSpan" || args(0) == "-gs") {
-        Config.sparkConf = new SparkConf().setAppName(Config.appName).setMaster(Config.master)
-        Config.sparkConf.set("spark.serializer", Config.serializer)
-        if (Config.serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
-
-        Config.sparkContext = new SparkContext(Config.sparkConf)
-        Config.minSupport = args(2).toDouble
-        //-----------GRAPH THẬT------------
-        val cooccurrenceGraph = new CoocurrenceGraph
-        val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSet(args(1)))
-        //---------------------------------
-        
-        //cooccurrenceGraph.printTenGraphs(rddGraphs)
-        
-        //-----------GRAPH TEST------------
-        //val testGraph = new TestGraph
-        //val (createGraphTime, rddGraphs) = Timer.timer(testGraph.createTestGraphSet(args(1)))
-        //---------------------------------
-        
-        rddGraphs.persist(StorageLevel.MEMORY_AND_DISK)
-
-        val gspan = new gSpan
-        val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
-        println("---------OUTPUT---------")
-        var sRes = resultToString(s, frequentVertices)
-        sRes += ("\n---------TIMER---------\nThời gian đọc dựng đồ thị là: " + createGraphTime / 1000000000d + " giây.")
-        sRes += ("\nThời gian tìm đồ thị con phổ biến là: " + miningTime / 1000000000d + " giây.")
-        sRes += ("\nTổng thời gian là: " + (createGraphTime + miningTime) / 1000000000d + " giây.")
-        println(sRes)
-        if (OutputtoHDFS.writeFile(args(3), sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + args(3))
-        println("----------END----------")
-        Config.sparkContext.stop
-        
-      } else if (args(0) == "--characteristicExtract" || args(0) == "-ce") {
-        Config.sparkConf = new SparkConf().setAppName(Config.appName).setMaster(Config.master)
-        Config.sparkConf.set("spark.serializer", Config.serializer)
-        if (Config.serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
-
-        Config.sparkContext = new SparkContext(Config.sparkConf)
-        Config.minDistance = args(2).toDouble
-        val characteristicExtract = new CharacteristicExtract
-        val (extractTime, _) = Timer.timer(characteristicExtract.characteristicExtract(args(1), args(3)))
-        println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
-        Config.sparkContext.stop
-      } else if (args(0) == "--createDictionary" || args(0) == "-cd") {
-        Config.sparkConf = new SparkConf().setAppName(Config.appName).setMaster(Config.master)
-        Config.sparkConf.set("spark.serializer", Config.serializer)
-        if (Config.serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode]))
-
-        Config.sparkContext = new SparkContext(Config.sparkConf)
-        val vectorization = new Vectorization
-        val (extractTime, _) = Timer.timer(vectorization.createDictionary(args(1), args(2)))
-        println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
-        Config.sparkContext.stop
       } else {
-        printHelp()
+        Config.sparkConf = new SparkConf().setAppName(Config.appName).setMaster(Config.master)
+        Config.sparkConf.set("spark.serializer", Config.serializer)
+        if (Config.serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode], classOf[TopicDiscovery]))
+
+        Config.sparkContext = new SparkContext(Config.sparkConf)
+        if (args(0) == "--gSpan" || args(0) == "-gs") {
+          Config.minSupport = args(2).toDouble
+          //-----------GRAPH THẬT------------
+          val cooccurrenceGraph = new CoocurrenceGraph
+          val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSet(args(1)))
+          //---------------------------------
+
+          //cooccurrenceGraph.printTenGraphs(rddGraphs)
+
+          //-----------GRAPH TEST------------
+          //val testGraph = new TestGraph
+          //val (createGraphTime, rddGraphs) = Timer.timer(testGraph.createTestGraphSet(args(1)))
+          //---------------------------------
+
+          rddGraphs.persist(Config.defaultStorageLevel)
+
+          val gspan = new gSpan
+          val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
+          println("---------OUTPUT---------")
+          var sRes = resultToString(s, frequentVertices)
+          sRes += ("\n---------TIMER---------\nThời gian đọc dựng đồ thị là: " + createGraphTime / 1000000000d + " giây.")
+          sRes += ("\nThời gian tìm đồ thị con phổ biến là: " + miningTime / 1000000000d + " giây.")
+          sRes += ("\nTổng thời gian là: " + (createGraphTime + miningTime) / 1000000000d + " giây.")
+          println(sRes)
+          if (OutputtoHDFS.writeFile(args(3), sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + args(3))
+          println("----------END----------")
+          Config.sparkContext.stop
+
+        } else if (args(0) == "--characteristicExtract" || args(0) == "-ce") {
+          Config.minDistance = args(2).toDouble
+          val characteristicExtract = new CharacteristicExtract
+          val (extractTime, _) = Timer.timer(characteristicExtract.characteristicExtract(args(1), args(3)))
+          println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
+          Config.sparkContext.stop
+        } else if (args(0) == "--createDictionary" || args(0) == "-cd") {
+          val vectorization = new Vectorization
+          val (extractTime, _) = Timer.timer(vectorization.createDictionary(args(1), args(2)))
+          println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
+          Config.sparkContext.stop
+        } else if (args(0) == "--topicDiscovery" || args(0) == "-td") {
+          val topicDiscovery = new TopicDiscovery
+          val (extractTime, topic) = Timer.timer(topicDiscovery.topicDiscover(args(1), args(2)))
+          println("TOPIC:\n" + topic.mkString("\n"))
+          println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
+          Config.sparkContext.stop
+        } else {
+          if (Config.sparkContext != null) Config.sparkContext.stop
+          printHelp()
+        }
       }
     } catch {
       case t: Throwable => {
@@ -114,6 +114,7 @@ object MainProgram {
     println("              --gSpan -gs : Frequent Subgraph Mining Using gSpan Algorithm. Arguments: FolderInputPath MinSupport OutputFilePath")
     println("              --characteristicExtract -ce : Extract topic characteristic. Arguments: FolderInputPath MinDistance FolderOutputPath")
     println("              --createDictionary -cd : Create dictionary from all topic characteristic. Arguments: FolderInputPath OutputFilePath")
+    println("              --topicDiscovery -td : Discover topic of given document. Arguments: DocumentPath DictionaryPath")
     println("              --help -h : Print this help")
   }
 }

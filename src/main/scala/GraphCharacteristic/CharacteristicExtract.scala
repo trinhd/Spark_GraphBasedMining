@@ -10,7 +10,7 @@ import scala.collection.mutable.ListBuffer
 
 class CharacteristicExtract {
   def characteristicExtract(folderPath: String, outputPath: String) = {
-    val rddDoc = HDFSReader.hdfsReader(folderPath)
+    val rddDoc = HDFSReader.hdfsFolderReader(folderPath)
     val arrFreq = rddDoc.map {
       case (link, doc) => {
         val output_link = outputPath + "/" + link.split("/").last + "_filted"

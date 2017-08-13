@@ -98,7 +98,13 @@ class Graph extends Serializable {
     sRes
   }
 
-  def addGraphTest(graph: Map[String, ArrayBuffer[String]]) = {
+  def addGraphDirect(graph: Map[String, ArrayBuffer[String]]) = {
     Graph = graph
+  }
+  
+  def addGraphOneVertex(vertex: String) = {
+    var mGraph = HashMap[String, ArrayBuffer[String]]()
+    mGraph += ((vertex, ArrayBuffer[String]()))
+    Graph = mGraph
   }
 }

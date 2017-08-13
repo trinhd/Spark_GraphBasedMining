@@ -13,7 +13,7 @@ import main.scala.Input.HDFSReader
 
 class TestGraph {
   def createTestGraphSet(folderPath: String): RDD[Graph] = {
-    val rddDoc = HDFSReader.hdfsReader(folderPath)
+    val rddDoc = HDFSReader.hdfsFolderReader(folderPath)
     val rddGraph = rddDoc.flatMap(doc => {
       val tempGraphList = ListBuffer[Graph]()
       val arr = doc._2.split(Properties.lineSeparator)
@@ -29,7 +29,7 @@ class TestGraph {
               if (items(2).equals("-1")) break
               if (graph != null) {
                 val temp = new Graph()
-                temp.addGraphTest(graph)
+                temp.addGraphDirect(graph)
                 tempGraphList += temp
               }
               graph = Map[String, ArrayBuffer[String]]()
@@ -51,7 +51,7 @@ class TestGraph {
           }
         })
       val temp = new Graph()
-      temp.addGraphTest(graph)
+      temp.addGraphDirect(graph)
       tempGraphList += temp
       tempGraphList
     })
