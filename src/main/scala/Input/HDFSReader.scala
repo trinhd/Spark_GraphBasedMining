@@ -2,6 +2,9 @@ package main.scala.Input
 
 import main.scala.Configuration.Config
 import org.apache.spark.rdd.RDD
+import scala.collection.mutable.ArrayBuffer
+import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.fs.Path
 
 object HDFSReader {
   /**
@@ -22,5 +25,22 @@ object HDFSReader {
   def hdfsFileReader(inputPath: String): RDD[String] = {
     val rdd = Config.sparkContext.textFile(inputPath)
     rdd
+  }
+
+  /**
+   * Hàm xuất danh sách tất cả tập tin trong thư mục HDFS
+   * @param folderPath đường dẫn thư mục cần tìm
+   * @param recursive có đọc các thư mục con hay không?
+   * @return danh sách đường dẫn tất cả các tập tin trong thư mục đầu vào
+   */
+  def getAllFileFromFolder(folderPath: String, recursive: Boolean): ArrayBuffer[Path] = {
+    var arr = new ArrayBuffer[Path]
+
+    val hdfs: FileSystem = FileSystem.get(Config.sparkContext.hadoopConfiguration)
+    val status = hdfs.listFiles(new Path(folderPath), recursive)
+    while (status.hasNext()) {
+      arr += status.next().getPath
+    }
+    arr
   }
 }

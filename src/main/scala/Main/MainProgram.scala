@@ -78,6 +78,16 @@ object MainProgram {
           println("TOPIC:\n" + topic.mkString("\n"))
           println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
           Config.sparkContext.stop
+        } else if (args(0) == "--topicDiscoveryForDir" || args(0) == "-tdd") {
+          val topicDiscovery = new TopicDiscovery
+          val (extractTime, topic) = Timer.timer(topicDiscovery.topicDiscoverForFolder(args(1), args(2)))
+          var sRes = topic.map(file => {
+            file._1 + " :: " + file._2.mkString(" :: ")
+          }).mkString("\n")
+          println(sRes)
+          if (OutputtoHDFS.writeFile(args(3), sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + args(3))
+          println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
+          Config.sparkContext.stop
         } else {
           if (Config.sparkContext != null) Config.sparkContext.stop
           printHelp()
@@ -115,6 +125,7 @@ object MainProgram {
     println("              --characteristicExtract -ce : Extract topic characteristic. Arguments: FolderInputPath MinDistance FolderOutputPath")
     println("              --createDictionary -cd : Create dictionary from all topic characteristic. Arguments: FolderInputPath OutputFilePath")
     println("              --topicDiscovery -td : Discover topic of given document. Arguments: DocumentPath DictionaryPath")
+    println("              --topicDiscoveryForDir -tdd : Discover topic of given document on directory. Arguments: FolderPath DictionaryPath ResultOutputPath")
     println("              --help -h : Print this help")
   }
 }
