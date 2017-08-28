@@ -17,6 +17,9 @@ import main.scala.gSpan.gSpan
 import main.scala.GraphCharacteristic.CharacteristicExtract
 import main.scala.TopicDiscovery.Vectorization
 import main.scala.TopicDiscovery.TopicDiscovery
+import main.scala.Input.HDFSReader
+import main.scala.Input.FileReader
+import scala.util.Properties
 
 object MainProgram {
   def main(args: Array[String]) = {
@@ -61,6 +64,60 @@ object MainProgram {
           println("----------END----------")
           Config.sparkContext.stop
 
+        } else if (args(0) == "--gSpanDirectory" || args(0) == "-gsd") {
+          Config.minSupport = args(2).toDouble
+          //-----------GRAPH THẬT------------
+          val cooccurrenceGraph = new CoocurrenceGraph
+
+          if (HDFSReader.checkFolderExist(args(1))) {
+            println("IN HDFS!!!")
+            val subFolder = HDFSReader.getAllSubFolder(args(1))
+            println("SUBFOLDER LENGTH: " + subFolder.length)
+            subFolder.foreach(path => {
+              val strPath = path.toString()
+              val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSet(strPath))
+              rddGraphs.persist(Config.defaultStorageLevel)
+
+              val gspan = new gSpan
+              val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
+              rddGraphs.unpersist()
+              println("---------OUTPUT---------")
+              var sRes = resultToString(s, frequentVertices)
+              sRes += ("\n---------TIMER---------\nThời gian đọc dựng đồ thị là: " + createGraphTime / 1000000000d + " giây.")
+              sRes += ("\nThời gian tìm đồ thị con phổ biến là: " + miningTime / 1000000000d + " giây.")
+              sRes += ("\nTổng thời gian là: " + (createGraphTime + miningTime) / 1000000000d + " giây.")
+              println(sRes)
+              val outputPath = args(3) + Properties.lineSeparator + path.getName.split("_")(0) + "_res"
+              if (OutputtoHDFS.writeFile(outputPath, sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + outputPath)
+              println("----------END----------")
+            })
+          } else if (FileReader.checkFolderExist(args(1))) {
+            println("IN LOCAL!!!")
+            val subFolder = FileReader.getAllSubFolderPath(args(1))
+            println("SUBFOLDER LENGTH: " + subFolder.length)
+            subFolder.foreach(file => {
+              val strPath = file.getCanonicalPath
+              val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSetFromLocal(strPath))
+              rddGraphs.persist(Config.defaultStorageLevel)
+
+              val gspan = new gSpan
+              val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
+              rddGraphs.unpersist()
+              println("---------OUTPUT---------")
+              var sRes = resultToString(s, frequentVertices)
+              sRes += ("\n---------TIMER---------\nThời gian đọc dựng đồ thị là: " + createGraphTime / 1000000000d + " giây.")
+              sRes += ("\nThời gian tìm đồ thị con phổ biến là: " + miningTime / 1000000000d + " giây.")
+              sRes += ("\nTổng thời gian là: " + (createGraphTime + miningTime) / 1000000000d + " giây.")
+              println(sRes)
+              val outputPath = args(3) + Properties.lineSeparator + file.getName.split("_")(0) + "_res"
+              if (OutputtoHDFS.writeFile(outputPath, sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + outputPath)
+              println("----------END----------")
+            })
+          } else {
+            println("ERROR: KHÔNG TỒN TẠI THƯ MỤC ĐẦU VÀO TRÊN CẢ HDFS VÀ LOCAL!")
+            printHelp()
+          }
+          Config.sparkContext.stop
         } else if (args(0) == "--characteristicExtract" || args(0) == "-ce") {
           Config.minDistance = args(2).toDouble
           val characteristicExtract = new CharacteristicExtract
@@ -122,6 +179,7 @@ object MainProgram {
     println("Usage: ProgramJarFile [Option] [Arguments]")
     println("       Option:")
     println("              --gSpan -gs : Frequent Subgraph Mining Using gSpan Algorithm. Arguments: FolderInputPath MinSupport OutputFilePath")
+    println("              --gSpanDirectory -gsd : Frequent Subgraph Mining Using gSpan Algorithm For All SubFolder. Arguments: FolderInputPath MinSupport OutputFolderPath")
     println("              --characteristicExtract -ce : Extract topic characteristic. Arguments: FolderInputPath MinDistance FolderOutputPath")
     println("              --createDictionary -cd : Create dictionary from all topic characteristic. Arguments: FolderInputPath OutputFilePath")
     println("              --topicDiscovery -td : Discover topic of given document. Arguments: DocumentPath DictionaryPath")

@@ -43,4 +43,23 @@ object HDFSReader {
     }
     arr
   }
+
+  def getAllSubFolder(folderPath: String): ArrayBuffer[Path] = {
+    var arr = new ArrayBuffer[Path]
+
+    val hdfs: FileSystem = FileSystem.get(Config.sparkContext.hadoopConfiguration)
+    val status = hdfs.listLocatedStatus(new Path(folderPath))
+    while (status.hasNext()) {
+      val next = status.next()
+      if (next.isDirectory()) {
+        arr += status.next().getPath
+      }
+    }
+    arr
+  }
+
+  def checkFolderExist(folderPath: String): Boolean = {
+    val hdfs: FileSystem = FileSystem.get(Config.sparkContext.hadoopConfiguration)
+    hdfs.exists(new Path(folderPath))
+  }
 }
