@@ -70,9 +70,9 @@ object MainProgram {
           val cooccurrenceGraph = new CoocurrenceGraph
 
           if (HDFSReader.checkFolderExist(args(1))) {
-            println("IN HDFS!!!")
+            //println("IN HDFS!!!")
             val subFolder = HDFSReader.getAllSubFolder(args(1))
-            println("SUBFOLDER LENGTH: " + subFolder.length)
+            //println("SUBFOLDER LENGTH: " + subFolder.length)
             subFolder.foreach(path => {
               val strPath = path.toString()
               val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSet(strPath))
@@ -92,9 +92,9 @@ object MainProgram {
               println("----------END----------")
             })
           } else if (FileReader.checkFolderExist(args(1))) {
-            println("IN LOCAL!!!")
+            //println("IN LOCAL!!!")
             val subFolder = FileReader.getAllSubFolderPath(args(1))
-            println("SUBFOLDER LENGTH: " + subFolder.length)
+            //println("SUBFOLDER LENGTH: " + subFolder.length)
             subFolder.foreach(file => {
               val strPath = file.getCanonicalPath
               val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSetFromLocal(strPath))

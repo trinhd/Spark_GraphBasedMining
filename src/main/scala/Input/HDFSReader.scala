@@ -52,7 +52,7 @@ object HDFSReader {
     while (status.hasNext()) {
       val next = status.next()
       if (next.isDirectory()) {
-        arr += status.next().getPath
+        arr += next.getPath
       }
     }
     arr
