@@ -19,7 +19,7 @@ import main.scala.TopicDiscovery.Vectorization
 import main.scala.TopicDiscovery.TopicDiscovery
 import main.scala.Input.HDFSReader
 import main.scala.Input.FileReader
-import scala.util.Properties
+import java.io.File
 
 object MainProgram {
   def main(args: Array[String]) = {
@@ -87,7 +87,7 @@ object MainProgram {
               sRes += ("\nThời gian tìm đồ thị con phổ biến là: " + miningTime / 1000000000d + " giây.")
               sRes += ("\nTổng thời gian là: " + (createGraphTime + miningTime) / 1000000000d + " giây.")
               println(sRes)
-              val outputPath = args(3) + Properties.lineSeparator + path.getName.split("_")(0) + "_res"
+              val outputPath = args(3) + File.separator + path.getName.split("_")(0) + "_res"
               if (OutputtoHDFS.writeFile(outputPath, sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + outputPath)
               println("----------END----------")
             })
@@ -109,7 +109,7 @@ object MainProgram {
               sRes += ("\nThời gian tìm đồ thị con phổ biến là: " + miningTime / 1000000000d + " giây.")
               sRes += ("\nTổng thời gian là: " + (createGraphTime + miningTime) / 1000000000d + " giây.")
               println(sRes)
-              val outputPath = args(3) + Properties.lineSeparator + file.getName.split("_")(0) + "_res"
+              val outputPath = args(3) + File.separator + file.getName.split("_")(0) + "_res"
               if (OutputtoHDFS.writeFile(outputPath, sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + outputPath)
               println("----------END----------")
             })
