@@ -13,7 +13,7 @@ class gSpan {
    * @param rddGraphs: danh sách tất cả đồ thị trên RDD
    * @return danh sách đồ thị con phổ biến và danh sách đỉnh phổ biến đã gán nhãn, dùng để tra cứu từ nhãn ngược lại tên đỉnh
    */
-  def frequentSubgraphMining(rddGraphs: RDD[Graph]): (ListBuffer[FinalDFSCode], Array[(String, Int)]) = {
+  def frequentSubgraphMining(rddGraphs: RDD[Graph]): (ListBuffer[FinalDFSCode], Array[(String, Int, Int)]) = {
     val graphCount = rddGraphs.count()
     val minSupInt = (graphCount * Config.minSupport).toInt
     println("---------INPUT---------")
@@ -32,7 +32,7 @@ class gSpan {
     val frequentVertices = graphBuilder.filterFrequentVertex(rddGraphs, minSupInt).collect()
 
     if (!frequentVertices.isEmpty) {
-      val (reconstructedGraph, frequentEdges) = graphBuilder.reconstructGraphSet(rddGraphsIndexed, Config.sparkContext.broadcast(frequentVertices))
+      val (reconstructedGraph, frequentEdges) = graphBuilder.reconstructGraphSet(rddGraphsIndexed, Config.sparkContext.broadcast(frequentVertices.map(v => { (v._1, v._3) })))
       reconstructedGraph.persist(Config.defaultStorageLevel)
 
       /*reconstructedGraph.foreach(g => {
@@ -65,7 +65,7 @@ class gSpan {
       (s, frequentVertices)
     } else {
       //println("Dinh pho bien rong")
-      (new ListBuffer[FinalDFSCode], Array[(String, Int)]())
+      (new ListBuffer[FinalDFSCode], Array[(String, Int, Int)]())
     }
   }
 }

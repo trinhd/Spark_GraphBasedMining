@@ -127,7 +127,7 @@ object MainProgram {
           Config.sparkContext.stop
         } else if (args(0) == "--createDictionary" || args(0) == "-cd") {
           val vectorization = new Vectorization
-          val (extractTime, _) = Timer.timer(vectorization.createDictionary(args(1), args(2)))
+          val (extractTime, _) = Timer.timer(vectorization.createDictionary(args(1), args(2).toInt, args(3)))
           println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
           Config.sparkContext.stop
         } else if (args(0) == "--topicDiscovery" || args(0) == "-td") {
@@ -174,14 +174,14 @@ object MainProgram {
     }
   }
 
-  def resultToString(dfsFinalCode: ListBuffer[FinalDFSCode], frequentVertices: Array[(String, Int)]) = {
+  def resultToString(dfsFinalCode: ListBuffer[FinalDFSCode], frequentVertices: Array[(String, Int, Int)]) = {
     var resString = ""
     val iCount = dfsFinalCode.length + frequentVertices.length
     resString += iCount + " đồ thị con phổ biến.\n"
     if (frequentVertices.length > 0) {
       resString += "Trong đó có " + frequentVertices.length + " đỉnh phổ biến.\n"
       resString += "Và " + dfsFinalCode.length + " đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\nCác đỉnh phổ biến là:\n"
-      resString += frequentVertices.map(v => v._1).mkString("\n")
+      resString += frequentVertices.map(v => v._1 + " :: " + v._2).mkString("\n")
       if (dfsFinalCode.length > 0) {
         resString += "\nCác đồ thị con phổ biến là: \n"
         resString += dfsFinalCode.zipWithIndex.map { case (code, index) => code.extractInfo(index, frequentVertices) }.mkString("\n")
@@ -196,7 +196,7 @@ object MainProgram {
     println("              --gSpan -gs : Frequent Subgraph Mining Using gSpan Algorithm. Arguments: FolderInputPath MinSupport OutputFilePath")
     println("              --gSpanDirectory -gsd : Frequent Subgraph Mining Using gSpan Algorithm For All SubFolder. Arguments: FolderInputPath MinSupport OutputFolderPath")
     println("              --characteristicExtract -ce : Extract topic characteristic. Arguments: FolderInputPath MinDistance FolderOutputPath")
-    println("              --createDictionary -cd : Create dictionary from all topic characteristic. Arguments: FolderInputPath OutputFilePath")
+    println("              --createDictionary -cd : Create dictionary from all topic characteristic. Arguments: FolderInputPath MaxDimension OutputFilePath")
     println("              --topicDiscovery -td : Discover topic of given document. Arguments: DocumentPath DictionaryPath")
     println("              --topicDiscoveryForDir -tdd : Discover topic of given document on directory. Arguments: FolderPath DictionaryPath ResultOutputPath")
     println("              --help -h : Print this help")

@@ -43,10 +43,10 @@ class GraphBuilder extends Serializable {
    * Hàm lọc bỏ những đỉnh không phổ biến
    * @param graphs: tập các ma trận kề của đồ thị đồng hiện đã tạo
    * @param minSup: ngưỡng độ hỗ trợ nhỏ nhất
-   * @return Danh sách đỉnh đã lọc kèm theo index của nó theo thứ tự frequency giảm dần
+   * @return Danh sách đỉnh đã lọc kèm theo frequency và index của nó theo thứ tự frequency giảm dần
    */
-  def filterFrequentVertex(graphs: RDD[Graph], minSup: Int): RDD[(String, Int)] = {
-    var rddVetexIndexed = graphs.flatMap(g => g.Graph.keys).map(v => (v, 1)).reduceByKey(_ + _).filter(c => c._2 >= minSup).sortBy(-_._2).zipWithIndex().map(v => (v._1._1, v._2.toInt))
+  def filterFrequentVertex(graphs: RDD[Graph], minSup: Int): RDD[(String, Int, Int)] = {
+    var rddVetexIndexed = graphs.flatMap(g => g.Graph.keys).map(v => (v, 1)).reduceByKey(_ + _).filter(c => c._2 >= minSup).sortBy(-_._2).zipWithIndex().map(v => (v._1._1, v._1._2, v._2.toInt))
     rddVetexIndexed
   }
 

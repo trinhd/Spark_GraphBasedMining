@@ -14,7 +14,7 @@ class CharacteristicExtract {
     val arrFreq = rddDoc.map {
       case (link, doc) => {
         val output_link = outputPath + "/" + link.split("/").last + "_filted"
-        var arrOne = ArrayBuffer[String]()
+        var arrOne = ArrayBuffer[(String, Int)]()
         var arrGraph = ArrayBuffer[Graph]()
         val arrLine = doc.split("\n")
         var i = 0
@@ -22,7 +22,8 @@ class CharacteristicExtract {
           if (arrLine(i).contains("Các đỉnh phổ biến là:")) {
             i = i + 1
             while (!arrLine(i).contains("Các đồ thị con phổ biến là:") && (i < arrLine.length - 4)) {
-              arrOne += arrLine(i)
+              val arrLineTemp = arrLine(i).split("::")
+              arrOne += ((arrLineTemp(0).trim, arrLineTemp(1).trim.toInt))
               i = i + 1
             }
             if (arrLine(i).contains("Các đồ thị con phổ biến là:")) {
@@ -63,7 +64,7 @@ class CharacteristicExtract {
       }
     }.collect()
 
-    var arrFinalRes = new Array[(String, ArrayBuffer[String], ArrayBuffer[Graph])](arrFreq.length)
+    var arrFinalRes = new Array[(String, ArrayBuffer[(String, Int)], ArrayBuffer[Graph])](arrFreq.length)
 
     var arrMatrixRes = ListBuffer[(Int, Int, Int, Int, Double)]()
 
@@ -72,7 +73,10 @@ class CharacteristicExtract {
       var arrGraph = arrFreq(i)._3.map((_, 1d)) //arrFreq(i)._3
       for (j <- 0 until arrFreq.length) {
         if (i != j) {
-          arrOne --= arrFreq(j)._2
+          val arrOneTemp = arrFreq(j)._2.map(_._1)
+          arrOne = arrOne.filterNot(p => {
+            arrOneTemp.contains(p._1)
+          })
 
           var arrGraphCompute = arrFreq(j)._3
           for (x <- 0 until arrGraph.length) {
@@ -100,7 +104,7 @@ class CharacteristicExtract {
       s += "Trong đó có " + t._2.length + " đỉnh phổ biến.\n"
       if (!t._3.isEmpty) s += "Và " + t._3.length + " đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\n"
       s += "Các đỉnh phổ biến là:\n"
-      s += t._2.mkString("\n")
+      s += t._2.map(f => f._1 + " :: " + f._2).mkString("\n")
       if (!t._3.isEmpty) {
         s += "\nCác đồ thị con phổ biến là:"
         var n = 0
@@ -137,7 +141,7 @@ class CharacteristicExtract {
         for (gr <- s) {
           var grTemp = new Graph
           for (ec <- gr.arrEdgeCode) {
-            grTemp.addOrUpdateVertex(frequentVertices.find(_._2 == ec.lbFrom).get._1, frequentVertices.find(_._2 == ec.lbTo).get._1)
+            grTemp.addOrUpdateVertex(frequentVertices.find(_._3 == ec.lbFrom).get._1, frequentVertices.find(_._3 == ec.lbTo).get._1)
           }
 
           var grTempSize = graphSize(grTemp)

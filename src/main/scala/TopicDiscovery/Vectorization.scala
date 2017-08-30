@@ -9,19 +9,36 @@ import scala.collection.mutable.HashMap
 import util.control.Breaks._
 
 class Vectorization {
-  def createDictionary(folderPath: String, outputPath: String) = {
+  def createDictionary(folderPath: String, maxDimension: Int, outputPath: String) = {
+    //maxDimension: 0 - ko lay word, -1 - lay het toan bo word, >0 - lay theo do
     var sFinalRes = "File ID:\n"
     val rddDoc = HDFSReader.hdfsFolderReader(folderPath).zipWithIndex()
     val rddDic = rddDoc.flatMap {
       case ((link, doc), id) => {
+        var wordNo, graphNo, remainWords = 0
         var arrTemp = ArrayBuffer[(Long, String)]()
         val arrLine = doc.split("\n")
         var i = 0
         while (i < arrLine.length) {
+          if (i == 1) wordNo = arrLine(i).split(" ")(3).trim.toInt
+          if (i == 2) {
+            graphNo = arrLine(i).split(" ")(1).trim.toInt
+            if (maxDimension > 0 && maxDimension > graphNo) {
+              remainWords = maxDimension - graphNo
+            } else {
+              remainWords = 0
+            }
+          }
           if (arrLine(i).contains("Các đỉnh phổ biến là:")) {
             i = i + 1
             while ((i < arrLine.length) && !arrLine(i).contains("Các đồ thị con phổ biến là:")) {
-              arrTemp += ((id, arrLine(i)))
+              if (remainWords > 0) {
+                arrTemp += ((id, arrLine(i).split("::")(0).trim))
+                remainWords -= 1
+              }
+              else if (maxDimension == -1) {
+                arrTemp += ((id, arrLine(i).split("::")(0).trim))
+              }
               i = i + 1
             }
             if ((i < arrLine.length) && arrLine(i).contains("Các đồ thị con phổ biến là:")) {
