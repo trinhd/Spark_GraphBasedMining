@@ -27,6 +27,11 @@ object FileReader {
     folder.listFiles().filter(_.isDirectory())
   }
   
+  def getAllFilesOnFolder(folderPath: String): Array[File] = {
+    var folder = new File(folderPath)
+    folder.listFiles().filter(_.isFile())
+  }
+  
   def folderReader(folderPath: String): Array[(String, Array[String])] = {
     var folder = new File(folderPath)
     folder.listFiles().filter(_.isFile()).map(file => {

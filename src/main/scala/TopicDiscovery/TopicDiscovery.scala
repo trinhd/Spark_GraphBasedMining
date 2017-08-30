@@ -7,6 +7,7 @@ import main.scala.Configuration.Config
 import org.apache.hadoop.fs.FileSystem
 import main.scala.Input.HDFSReader
 import scala.collection.mutable.ArrayBuffer
+import main.scala.Input.FileReader
 
 class TopicDiscovery extends Serializable {
   def topicDiscover(filePath: String, dictionaryPath: String): Array[String] = {
@@ -31,6 +32,23 @@ class TopicDiscovery extends Serializable {
     val (mTopic, mDimension, mTopicVector) = vectorization.readDictionary(dictionaryPath)
     val res = listFiles.map(file => {
       val graph = coocurrence.createCoocurrenceGraph(file.toString())
+      val graphVector = vectorization.createVector(graph, mDimension)
+      val topicIndex = kNearestNeighbor(graphVector, mTopicVector)
+      val topic = topicIndex.map(id => {
+        mTopic.find(_._1 == id).get._2
+      })
+      (file.getName, topic)
+    })
+    res
+  }
+  
+  def topicDiscoverForLocalFolder(folderPath: String, dictionaryPath: String): Array[(String, Array[String])] = {
+    val listFiles = FileReader.getAllFilesOnFolder(folderPath)
+    val coocurrence = new CoocurrenceGraph
+    val vectorization = new Vectorization
+    val (mTopic, mDimension, mTopicVector) = vectorization.readDictionary(dictionaryPath)
+    val res = listFiles.map(file => {
+      val graph = coocurrence.createCoocurrenceGraph(file.getCanonicalPath)
       val graphVector = vectorization.createVector(graph, mDimension)
       val topicIndex = kNearestNeighbor(graphVector, mTopicVector)
       val topic = topicIndex.map(id => {

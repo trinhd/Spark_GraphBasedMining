@@ -20,6 +20,7 @@ import main.scala.TopicDiscovery.TopicDiscovery
 import main.scala.Input.HDFSReader
 import main.scala.Input.FileReader
 import java.io.File
+import scala.collection.mutable.ArrayBuffer
 
 object MainProgram {
   def main(args: Array[String]) = {
@@ -137,13 +138,27 @@ object MainProgram {
           Config.sparkContext.stop
         } else if (args(0) == "--topicDiscoveryForDir" || args(0) == "-tdd") {
           val topicDiscovery = new TopicDiscovery
-          val (extractTime, topic) = Timer.timer(topicDiscovery.topicDiscoverForFolder(args(1), args(2)))
-          var sRes = topic.map(file => {
-            file._1 + " :: " + file._2.mkString(" :: ")
-          }).mkString("\n")
-          println(sRes)
-          if (OutputtoHDFS.writeFile(args(3), sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + args(3))
-          println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
+          if (HDFSReader.checkFolderExist(args(1))) {
+            val (extractTime, topic) = Timer.timer(topicDiscovery.topicDiscoverForFolder(args(1), args(2)))
+            var sRes = topic.map(file => {
+              file._1 + " :: " + file._2.mkString(" :: ")
+            }).mkString("\n")
+            println(sRes)
+            if (OutputtoHDFS.writeFile(args(3), sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + args(3))
+            println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
+          } else if (FileReader.checkFolderExist(args(1))) {
+            val (extractTime, topic) = Timer.timer(topicDiscovery.topicDiscoverForLocalFolder(args(1), args(2)))
+            var sRes = topic.map(file => {
+              file._1 + " :: " + file._2.mkString(" :: ")
+            }).mkString("\n")
+            println(sRes)
+            if (OutputtoHDFS.writeFile(args(3), sRes)) println("Kết quả tính được ghi thành công xuống tập tin " + args(3))
+            println("Thời gian thực thi là: " + extractTime / 1000000000d + " giây.")
+          } else {
+            println("ERROR: KHÔNG TỒN TẠI THƯ MỤC ĐẦU VÀO TRÊN CẢ HDFS VÀ LOCAL!")
+            printHelp()
+          }
+
           Config.sparkContext.stop
         } else {
           if (Config.sparkContext != null) Config.sparkContext.stop
