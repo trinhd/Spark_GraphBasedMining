@@ -14,8 +14,8 @@ class gSpan {
    * @return danh sách đồ thị con phổ biến và danh sách đỉnh phổ biến đã gán nhãn, dùng để tra cứu từ nhãn ngược lại tên đỉnh
    */
   def frequentSubgraphMining(rddGraphs: RDD[Graph]): (ListBuffer[FinalDFSCode], Array[(String, Int, Int)]) = {
-    val graphCount = rddGraphs.count()
-    val minSupInt = (graphCount * Config.minSupport).toInt
+    val graphCount = rddGraphs.count().toDouble
+    val minSupInt = math.ceil((graphCount * Config.minSupport)).toInt
     println("---------INPUT---------")
     println("Number of graphs: " + graphCount)
     println("Minimum Support: " + Config.minSupport)
@@ -31,11 +31,14 @@ class gSpan {
     val s = new ListBuffer[FinalDFSCode]
     val frequentVertices = graphBuilder.filterFrequentVertex(rddGraphs, minSupInt).collect()
 
-    if (!frequentVertices.isEmpty) {
-      val (reconstructedGraph, frequentEdges) = graphBuilder.reconstructGraphSet(rddGraphsIndexed, Config.sparkContext.broadcast(frequentVertices.map(v => { (v._1, v._3) })))
-      reconstructedGraph.persist(Config.defaultStorageLevel)
+    if (graphCount == 1d) {
+      (new ListBuffer[FinalDFSCode], frequentVertices)
+    } else {
+      if (!frequentVertices.isEmpty) {
+        val (reconstructedGraph, frequentEdges) = graphBuilder.reconstructGraphSet(rddGraphsIndexed, Config.sparkContext.broadcast(frequentVertices.map(v => { (v._1, v._3) })))
+        reconstructedGraph.persist(Config.defaultStorageLevel)
 
-      /*reconstructedGraph.foreach(g => {
+        /*reconstructedGraph.foreach(g => {
       println("Đồ thị: " + g._1)
       println("Đỉnh: " + g._2.map(v => frequentVertices.find(_._2 == v).get._1).mkString(", "))
       println("Cạnh: " + g._3.map(tuple => frequentVertices.find(_._2 == tuple._1).get._1 + " => " + frequentVertices.find(_._2 == tuple._2).get._1).mkString(", "))
@@ -43,29 +46,30 @@ class gSpan {
     	println("Cạnh phổ biến trong tập đồ thị là: ")
     	println(frequentEdges.map(e => frequentVertices.find(_._2 == e._1).get._1 + " => " + frequentVertices.find(_._2 == e._2).get._1).mkString("\n"))*/
 
-      val S1 = graphBuilder.buildOneEdgeCode(Config.sparkContext.parallelize(frequentEdges)).sortBy(_.lbFrom, true).collect()
-      val reconstructedGraphSet = reconstructedGraph.collect()
+        val S1 = graphBuilder.buildOneEdgeCode(Config.sparkContext.parallelize(frequentEdges)).sortBy(_.lbFrom, true).collect()
+        val reconstructedGraphSet = reconstructedGraph.collect()
 
-      for (edgeCode <- S1) {
-        val dfsGraphSet = graphBuilder.projectWithOneEdge(reconstructedGraph, Config.sparkContext.broadcast(edgeCode))
-        dfsGraphSet.persist(Config.defaultStorageLevel)
+        for (edgeCode <- S1) {
+          val dfsGraphSet = graphBuilder.projectWithOneEdge(reconstructedGraph, Config.sparkContext.broadcast(edgeCode))
+          dfsGraphSet.persist(Config.defaultStorageLevel)
 
-        val support = dfsGraphSet.map(_._1).distinct.count.toInt
+          val support = dfsGraphSet.map(_._1).distinct.count.toInt
 
-        val dfsCode = new DFSCode(Array(edgeCode), dfsGraphSet.collect().toList, support)
-        dfsGraphSet.unpersist()
+          val dfsCode = new DFSCode(Array(edgeCode), dfsGraphSet.collect().toList, support)
+          dfsGraphSet.unpersist()
 
-        var graphSet = reconstructedGraphSet.clone()
+          var graphSet = reconstructedGraphSet.clone()
 
-        graphBuilder.subgraphMining(graphSet, s, dfsCode, minSupInt)
+          graphBuilder.subgraphMining(graphSet, s, dfsCode, minSupInt)
 
-        graphSet = graphBuilder.shrink(Config.sparkContext.parallelize(graphSet), Config.sparkContext.broadcast(edgeCode)).collect()
+          graphSet = graphBuilder.shrink(Config.sparkContext.parallelize(graphSet), Config.sparkContext.broadcast(edgeCode)).collect()
+        }
+
+        (s, frequentVertices)
+      } else {
+        //println("Dinh pho bien rong")
+        (new ListBuffer[FinalDFSCode], Array[(String, Int, Int)]())
       }
-
-      (s, frequentVertices)
-    } else {
-      //println("Dinh pho bien rong")
-      (new ListBuffer[FinalDFSCode], Array[(String, Int, Int)]())
     }
   }
 }
