@@ -22,7 +22,9 @@ class Vectorization {
         while (i < arrLine.length) {
           if (i == 1) wordNo = arrLine(i).split(" ")(3).trim.toInt
           if (i == 2) {
-            graphNo = arrLine(i).split(" ")(1).trim.toInt
+            val all = arrLine(0).split(" ")(0).trim.toInt
+            if (all > wordNo) graphNo = all - wordNo
+            else graphNo = 0
             if (maxDimension > 0 && maxDimension > graphNo) {
               remainWords = maxDimension - graphNo
             } else {
