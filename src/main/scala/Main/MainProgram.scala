@@ -52,10 +52,11 @@ object MainProgram {
           //---------------------------------
 
           rddGraphs.persist(Config.defaultStorageLevel)
-
+          
+          println("Thư mục đang được xử lý là: " + args(1))
+          
           val gspan = new gSpan
           val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
-          println("Thư mục đang được xử lý là: " + args(1))
           println("---------OUTPUT---------")
           var sRes = resultToString(s, frequentVertices)
           sRes += ("\n---------TIMER---------\nThời gian đọc dựng đồ thị là: " + createGraphTime / 1000000000d + " giây.")
@@ -80,10 +81,11 @@ object MainProgram {
               val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSet(strPath))
               rddGraphs.persist(Config.defaultStorageLevel)
 
+              println("Thư mục đang được xử lý là: " + strPath)
+              
               val gspan = new gSpan
               val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
               rddGraphs.unpersist()
-              println("Thư mục đang được xử lý là: " + strPath)
               println("---------OUTPUT---------")
               var sRes = resultToString(s, frequentVertices)
               sRes += ("\n---------TIMER---------\nThời gian đọc dựng đồ thị là: " + createGraphTime / 1000000000d + " giây.")
@@ -103,10 +105,11 @@ object MainProgram {
               val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSetFromLocal(strPath))
               rddGraphs.persist(Config.defaultStorageLevel)
 
+              println("Thư mục đang được xử lý là: " + strPath)
+              
               val gspan = new gSpan
               val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
               rddGraphs.unpersist()
-              println("Thư mục đang được xử lý là: " + strPath)
               println("---------OUTPUT---------")
               var sRes = resultToString(s, frequentVertices)
               sRes += ("\n---------TIMER---------\nThời gian đọc dựng đồ thị là: " + createGraphTime / 1000000000d + " giây.")
