@@ -210,5 +210,12 @@
 	<classpathentry kind="lib" path="/home/tringuyen/Downloads/Apps/spark-2.1.1-bin-hadoop2.7/jars/xz-1.0.jar"/>
 	<classpathentry kind="lib" path="/home/tringuyen/Downloads/Apps/spark-2.1.1-bin-hadoop2.7/jars/zookeeper-3.4.6.jar"/>
 	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
+	<classpathentry exported="true" kind="lib" path="OrientDB_Libs/blueprints-core-2.6.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="OrientDB_Libs/concurrentlinkedhashmap-lru-1.4.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="OrientDB_Libs/jna-4.5.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="OrientDB_Libs/orientdb-client-2.2.30.jar"/>
+	<classpathentry exported="true" kind="lib" path="OrientDB_Libs/orientdb-core-2.2.30.jar"/>
+	<classpathentry exported="true" kind="lib" path="OrientDB_Libs/orientdb-distributed-2.2.30.jar"/>
+	<classpathentry exported="true" kind="lib" path="OrientDB_Libs/orientdb-graphdb-2.2.30.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

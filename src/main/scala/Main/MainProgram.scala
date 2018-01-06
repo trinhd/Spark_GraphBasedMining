@@ -21,6 +21,7 @@ import main.scala.Input.HDFSReader
 import main.scala.Input.FileReader
 import java.io.File
 import scala.collection.mutable.ArrayBuffer
+import main.scala.ReutersDataNormalizer
 
 object MainProgram {
   def main(args: Array[String]) = {
@@ -37,7 +38,14 @@ object MainProgram {
         if (Config.serializer.equals("org.apache.spark.serializer.KryoSerializer")) Config.sparkConf.registerKryoClasses(Array(classOf[CoocurrenceGraph], classOf[TestGraph], classOf[FinalDFSCode], classOf[EdgeCode], classOf[TopicDiscovery]))
 
         Config.sparkContext = new SparkContext(Config.sparkConf)
-        if (args(0) == "--gSpan" || args(0) == "-gs") {
+        if (args(0) == "--preprocessData" || args(0) == "-pd") {
+          if (args.length >= 3)
+            Config.stopwordFilePath = args(2)
+          val preprocessData = new ReutersDataNormalizer
+          val (preprocessTime, _) = Timer.timer(preprocessData.ReutersDataPreprocess(args(1), Config.stopwordFilePath))
+          println("Thời gian thực thi là: " + preprocessTime / 1000000000d + " giây.")
+          Config.sparkContext.stop
+        } else if (args(0) == "--gSpan" || args(0) == "-gs") {
           Config.minSupport = args(2).toDouble
           //-----------GRAPH THẬT------------
           val cooccurrenceGraph = new CoocurrenceGraph
@@ -199,6 +207,7 @@ object MainProgram {
   def printHelp() = {
     println("Usage: ProgramJarFile [Option] [Arguments]")
     println("       Option:")
+    println("              --preprocessData -pd : Preprocess Reuter 21578 data. Arguments: FolderInputPath StopwordFilePath")
     println("              --gSpan -gs : Frequent Subgraph Mining Using gSpan Algorithm. Arguments: FolderInputPath MinSupport OutputFilePath")
     println("              --gSpanDirectory -gsd : Frequent Subgraph Mining Using gSpan Algorithm For All SubFolder. Arguments: FolderInputPath MinSupport OutputFolderPath")
     println("              --characteristicExtract -ce : Extract topic characteristic. Arguments: FolderInputPath MinDistance FolderOutputPath")
