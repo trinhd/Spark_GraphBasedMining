@@ -31,11 +31,12 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
   //var database = "CoOccurrenceGraph"
   //var dbUser = "admin"
   //var dbPassword = "admin"
-  val labelSubject = "subject"
+  val labelTopic = "topic"
+  val labelFreq = "frequency"
   val labelName = "name"
   val tab_v = "dinh"
   val tab_e = "cooccurr_with"
-  val tab_doc = "alldoc"  
+  val tab_doc = "alldoc"
   //var port     = 2424
   //var userRoot = "root"
   //var pwdRoot = "12345"
@@ -47,7 +48,7 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
 
   //Constructor default
   def this() = {
-    this("remote:","localhost", "CoOccurrenceGraph","admin", "admin", "root", "12345")
+    this("remote:", "localhost", "CoOccurrenceGraph", "admin", "admin", "root", "12345")
   }
 
   /**
@@ -103,7 +104,8 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
       //Nếu chưa có database thì khởi tạo cấu trúc database
       if (graph.getVertexType(tab_v) == null) {
         val vertexType: OrientVertexType = graph.createVertexType(tab_v)
-        vertexType.createProperty(labelSubject, OType.STRING)
+        vertexType.createProperty(labelTopic, OType.STRING)
+        vertexType.createProperty(labelFreq, OType.INTEGER)
         vertexType.createProperty(labelName, OType.STRING)
 
         val edgeType: OrientEdgeType = graph.createEdgeType(tab_e)
@@ -157,11 +159,11 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
    * @param Name: Tên đỉnh cần thêm
    * @return Trả về đỉnh mới thêm vào nếu thành công, <code>null</code> nếu thất bại
    */
-  def insertVertex(factory: OrientGraphFactory, Subject: String, Name: String): Vertex = {
+  def insertVertex(factory: OrientGraphFactory, Subject: String, Frequency: Int, Name: String): Vertex = {
     var vertex: Vertex = null
     val graph: OrientGraph = factory.getTx
     try {
-      vertex = graph.addVertex("class:" + tab_v, labelSubject, Subject, labelName, Name)
+      vertex = graph.addVertex("class:" + tab_v, labelTopic, Subject, labelFreq, Frequency.toString, labelName, Name)
 
       //Cách thêm cạnh khác
       /*vertex = graph.addVertex("class:" + tab_v, Nil: _*)
@@ -189,21 +191,21 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
    * Hàm thêm đỉnh mới theo lô cho đồ thị
    * @param factory: Object dùng để tạo liên kết tới database
    * @param vertices: Map chứa thông tin đỉnh cần thêm các phần tử có cấu trúc (name -> subject)
-   * @return Danh sách đỉnh mới thêm vào nếu thành công, danh sách rỗng nếu thất bại
+   * @return Danh sách đỉnh mới thêm vào (cho phép tra cứu) nếu thành công, danh sách rỗng nếu thất bại
    */
-  def insertVertexInBatches(factory: OrientGraphFactory, vertices: Map[String, String]): ListBuffer[Vertex] = {
-    var lVertex: ListBuffer[Vertex] = ListBuffer()
+  def insertVertexInBatches(factory: OrientGraphFactory, vertices: Map[(String, Int), String]): ListBuffer[(String, Int, String, Vertex)] = {
+    var lVertex: ListBuffer[(String, Int, String, Vertex)] = ListBuffer()
     val graph: OrientGraphNoTx = factory.getNoTx
     try {
-      for ((name, sub) <- vertices) {
-        val vertex = graph.addVertex("class:" + tab_v, labelSubject, sub, labelName, name)
+      for (((name, freq), sub) <- vertices) {
+        val vertex = graph.addVertex("class:" + tab_v, labelTopic, sub, labelFreq, freq.toString, labelName, name)
 
         //Cách thêm cạnh khác
         /*val vertex: Vertex = graph.addVertex("class:" + tab_v, Nil: _*)
         vertex.setProperty(labelSubject, sub)
         vertex.setProperty(labelName, name)*/
 
-        lVertex += vertex
+        lVertex += ((name, freq, sub, vertex))
       }
       graph.commit
     } catch {
@@ -377,13 +379,13 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
       println("All Done!!!")
     }
   }
-  
+
   def queryDoc(factory: OPartitionedDatabasePool, strQuery: String) = {
     try {
-    val db = factory.acquire
-    val result: OConcurrentResultSet[ODocument] = db.query(new OSQLSynchQuery(strQuery))
-    db.close
-    result
+      val db = factory.acquire
+      val result: OConcurrentResultSet[ODocument] = db.query(new OSQLSynchQuery(strQuery))
+      db.close
+      result
     } catch {
       case t: Throwable => {
         println("************************ ERROR ************************")
@@ -392,7 +394,7 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
         println("************************ ERROR ************************")
         null
       }
-    }/* finally {
+    } /* finally {
       println("Thực hiện thành công lệnh truy vấn dữ liệu!")
       println("All Done!!!")
     }*/

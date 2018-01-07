@@ -7,6 +7,7 @@ import main.scala.Input.HDFSReader
 import main.scala.Output.OutputtoHDFS
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
+import main.scala.OrientDBUtils
 
 class CharacteristicExtract {
   def characteristicExtract(folderPath: String, outputPath: String) = {
@@ -118,8 +119,8 @@ class CharacteristicExtract {
     }
   }
   
-  def characteristicExtractCont(arrFreq: Array[(String, ArrayBuffer[(String, Int)], ArrayBuffer[Graph])]) = {
-    var arrFinalRes = new Array[(String, ArrayBuffer[(String, Int)], ArrayBuffer[Graph])](arrFreq.length)
+  def characteristicExtractCont(arrFreq: ListBuffer[(String, Array[(String, Int)], Array[(Graph, Int)])]) = {
+    var arrFinalRes = new Array[(String, Array[(String, Int)], Array[(Graph, Int)])](arrFreq.length)
 
     var arrMatrixRes = ListBuffer[(Int, Int, Int, Int, Double)]()
 
@@ -138,7 +139,7 @@ class CharacteristicExtract {
             for (y <- 0 until arrGraphCompute.length) {
               var distance = 1d
               if (!arrMatrixRes.exists(e => (e._1 == j && e._2 == i))) {
-                distance = graphDistance(arrGraph(x)._1, arrGraphCompute(y))
+                distance = graphDistance(arrGraph(x)._1._1, arrGraphCompute(y)._1)
                 arrMatrixRes += ((i, j, x, y, distance))
               } else {
                 distance = arrMatrixRes.find(e => (e._1 == j && e._2 == i && e._3 == y && e._4 == x)).get._5
@@ -171,6 +172,26 @@ class CharacteristicExtract {
       }
       if (OutputtoHDFS.writeFile(t._1, s)) println("Kết quả tính được ghi thành công xuống tập tin " + t._1)
     }*/
+    
+    val OrientDBUtilsGraph = new OrientDBUtils(Config.hostType, Config.hostAddress, Config.database, Config.dbUser, Config.dbPassword)
+    val factory = OrientDBUtilsGraph.connectDBUsingGraphAPI
+    arrFinalRes.foreach(res =>{
+      res._2.foreach(one => {
+        OrientDBUtilsGraph.insertVertex(factory, res._1, one._2, one._1)
+      })
+      res._3.foreach { case (gr, freq) => {
+        val vTemp = gr.Graph.keys.map(v => ((v, freq), res._1)).toMap[(String, Int), String]
+        val verDic = OrientDBUtilsGraph.insertVertexInBatches(factory, vTemp)
+        gr.Graph.foreach(v => {
+          val verStart = verDic.find(p => p._1 == v._1).get._4
+          v._2.foreach(end => {
+            val verEnd = verDic.find(p => p._1 == end).get._4
+            OrientDBUtilsGraph.insertEdge(factory, verStart, verEnd)
+          })
+        })
+      }}
+    })
+    factory.close
   }
 
   def graphSize(graph: Graph): Int = {

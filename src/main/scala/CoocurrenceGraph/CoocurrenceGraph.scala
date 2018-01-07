@@ -38,7 +38,7 @@ class CoocurrenceGraph {
     })
     Config.sparkContext.parallelize(arrGraph)
   }
-  
+
   def getAllTopicFromOrientDB(): List[String] = {
     val OrientDBUtilsDoc = new OrientDBUtils(Config.hostType, Config.hostAddress, Config.database, Config.dbUser, Config.dbPassword, Config.userRoot, Config.pwdRoot)
     val connectionPool = OrientDBUtilsDoc.connectDBUsingDocAPI
@@ -48,6 +48,7 @@ class CoocurrenceGraph {
       val topic = arrDoc.get(i).field("topic").toString
       arrTopic.append(topic)
     }
+    connectionPool.close
     arrTopic.toList
   }
 
@@ -64,6 +65,7 @@ class CoocurrenceGraph {
       }
       arrGraph.append(graph)
     }
+    connectionPool.close
     Config.sparkContext.parallelize(arrGraph)
   }
 

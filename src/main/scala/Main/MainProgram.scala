@@ -51,7 +51,7 @@ object MainProgram {
           Config.minDistance = args(2).toDouble
           val cooccurrenceGraph = new CoocurrenceGraph
           val listTopic = cooccurrenceGraph.getAllTopicFromOrientDB()
-          var listFrequentSubgraph: ListBuffer[(String, Array[(String, Int)], Array[Graph])] = ListBuffer()
+          var listFrequentSubgraph: ListBuffer[(String, Array[(String, Int)], Array[(Graph, Int)])] = ListBuffer()
           listTopic.foreach(topic => {
             val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSetFromOrientDB(topic))
             rddGraphs.persist(Config.defaultStorageLevel)
@@ -75,6 +75,11 @@ object MainProgram {
 
             println("----------END----------")
           })
+          
+          val characteristicExtract = new CharacteristicExtract
+          val (extractTime, _) = Timer.timer(characteristicExtract.characteristicExtractCont(listFrequentSubgraph))
+          println("Thời gian xây dựng tập đồ thị đặc trưng là: " + extractTime / 1000000000d + " giây.")
+          
           Config.sparkContext.stop
         } else if (args(0) == "--gSpan" || args(0) == "-gs") {
           Config.minSupport = args(2).toDouble
@@ -235,7 +240,7 @@ object MainProgram {
     resString
   }
 
-  def resultToGraph(dfsFinalCode: ListBuffer[FinalDFSCode], frequentVertices: Array[(String, Int, Int)]): Array[Graph] = {
+  def resultToGraph(dfsFinalCode: ListBuffer[FinalDFSCode], frequentVertices: Array[(String, Int, Int)]): Array[(Graph, Int)] = {
     if (frequentVertices.length > 0 && dfsFinalCode.length > 0) {
       return dfsFinalCode.map(code => code.extractGraph(frequentVertices)).toArray
     } else return null

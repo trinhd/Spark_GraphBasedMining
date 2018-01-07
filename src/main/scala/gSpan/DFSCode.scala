@@ -34,6 +34,6 @@ class FinalDFSCode(val arrEdgeCode: Array[EdgeCode], val support: Int) extends S
       val sVerEnd = verticesMapping.find(_._3 == ec.lbTo).get._1
       graph.addOrUpdateVertex(sVerStart, sVerEnd)
     })
-    graph
+    (graph, support)
   }
 }
