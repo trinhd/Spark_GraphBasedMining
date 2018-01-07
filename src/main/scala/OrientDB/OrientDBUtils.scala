@@ -13,6 +13,7 @@ import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 import com.orientechnologies.orient.core.db.OPartitionedDatabasePool
 import com.orientechnologies.orient.client.remote.OServerAdmin
 import com.orientechnologies.orient.core.record.impl.ODocument
+import com.orientechnologies.orient.core.exception.OConfigurationException
 
 class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbUser: String, dbPassword: String, userRoot: String, pwdRoot: String) {
   /*
@@ -290,18 +291,23 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
     }
 
     var factory = new OPartitionedDatabasePool(uri, userRoot, pwdRoot)
-    var db = factory.acquire()
 
     try {
-      if (!db.exists) {
+      var db = factory.acquire()
+      db.close
+    } catch {
+      case x: OConfigurationException => {
         println("Database chưa tồn tại, chương trình sẽ tiến hành khởi tạo!")
         if ((hostType == "plocal:") || (hostType == "memory:")) {
-          db.create
+          factory.setAutoCreate(true)
+          var db = factory.acquire
+          db.close
         } else {
           new OServerAdmin(uri).connect(userRoot, pwdRoot).createDatabase(database, "document", "plocal").close
+          factory.close
+          factory = new OPartitionedDatabasePool(uri, userRoot, pwdRoot)
         }
       }
-    } catch {
       case t: Throwable => {
         println("************************ ERROR ************************")
         println("Có LỖI xảy ra!!")
@@ -310,7 +316,6 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
       }
     } finally {
       println("Kết nối thành công với cơ sở dữ liệu!")
-      db.close
       //factory.close
       println("All Done!!!")
     }
