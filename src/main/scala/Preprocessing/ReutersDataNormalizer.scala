@@ -33,6 +33,9 @@ class ReutersDataNormalizer {
     val lastChars = Array(('"'), ('''), (')'), ('>'), (','), ('.'), ('?'), ('!'), (';'), ('”'), ('“'))
     val lastChars2 = Array((",\""), (">,"), (".,"), (".>"), (".\""), ("),"))
 
+    val OrientDBUtilsDoc = new OrientDBUtils(Config.hostType, Config.hostAddress, Config.database, Config.dbUser, Config.dbPassword, Config.userRoot, Config.pwdRoot)
+    val connectionPool = OrientDBUtilsDoc.connectDBUsingDocAPI
+
     //~~~~~~~~~~ Processing ~~~~~~~~~~
     inputTopicFolders.foreach(topicFolder => {
       //val outputTopicDir = outputPath + File.separator + topicFolder.getName
@@ -77,18 +80,15 @@ class ReutersDataNormalizer {
 
         // file has less than 20 words is useless
         if (words.length >= 20) {
-          println(Config.hostType)
-          val OrientDBUtilsDoc = new OrientDBUtils(Config.hostType, Config.hostAddress, Config.database, Config.dbUser, Config.dbPassword, Config.userRoot, Config.pwdRoot)
-          val connectionPool = OrientDBUtilsDoc.connectDBUsingDocAPI
-          val docContent = List(("orgpath", file.getCanonicalPath), ("content", words.mkString("\n")))
-          OrientDBUtilsDoc.insertDoc(connectionPool, topic, docContent)
+          val docContent = List(("topic", topic), ("orgpath", file.getCanonicalPath), ("content", words.mkString("\n")))
+          OrientDBUtilsDoc.insertDoc(connectionPool, docContent)
           println("Inserted to Database!")
-          connectionPool.close
         } else {
           println("File too short!")
         }
       })
     })
+    connectionPool.close
     println("Finished!!!")
   }
 }

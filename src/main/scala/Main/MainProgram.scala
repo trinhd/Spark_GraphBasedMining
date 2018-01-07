@@ -22,6 +22,7 @@ import main.scala.Input.FileReader
 import java.io.File
 import scala.collection.mutable.ArrayBuffer
 import main.scala.ReutersDataNormalizer
+import main.scala.CoocurrenceGraph.Graph
 
 object MainProgram {
   def main(args: Array[String]) = {
@@ -45,6 +46,36 @@ object MainProgram {
           val (preprocessTime, _) = Timer.timer(preprocessData.ReutersDataPreprocess(args(1), Config.stopwordFilePath))
           println("Thời gian thực thi là: " + preprocessTime / 1000000000d + " giây.")
           Config.sparkContext.stop
+        } else if (args(0) == "--topicModeling" || args(0) == "-tm") {
+          Config.minSupport = args(1).toDouble
+          Config.minDistance = args(2).toDouble
+          val cooccurrenceGraph = new CoocurrenceGraph
+          val listTopic = cooccurrenceGraph.getAllTopicFromOrientDB()
+          var listFrequentSubgraph: ListBuffer[(String, Array[(String, Int)], Array[Graph])] = ListBuffer()
+          listTopic.foreach(topic => {
+            val (createGraphTime, rddGraphs) = Timer.timer(cooccurrenceGraph.createCoocurrenceGraphSetFromOrientDB(topic))
+            rddGraphs.persist(Config.defaultStorageLevel)
+
+            println("Topic đang được xử lý là: " + topic)
+
+            val gspan = new gSpan
+            val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
+            rddGraphs.unpersist()
+            println("---------OUTPUT---------")
+            var sRes = resultToString(s, frequentVertices)
+            sRes += ("\n---------TIMER---------\nThời gian đọc dựng đồ thị là: " + createGraphTime / 1000000000d + " giây.")
+            sRes += ("\nThời gian tìm đồ thị con phổ biến là: " + miningTime / 1000000000d + " giây.")
+            sRes += ("\nTổng thời gian là: " + (createGraphTime + miningTime) / 1000000000d + " giây.")
+            println(sRes)
+
+            val arrFrequentSubgraph = resultToGraph(s, frequentVertices)
+            if (arrFrequentSubgraph != null) {
+              listFrequentSubgraph.append((topic, frequentVertices.map(v => (v._1, v._2)), arrFrequentSubgraph))
+            }
+
+            println("----------END----------")
+          })
+          Config.sparkContext.stop
         } else if (args(0) == "--gSpan" || args(0) == "-gs") {
           Config.minSupport = args(2).toDouble
           //-----------GRAPH THẬT------------
@@ -60,9 +91,9 @@ object MainProgram {
           //---------------------------------
 
           rddGraphs.persist(Config.defaultStorageLevel)
-          
+
           println("Thư mục đang được xử lý là: " + args(1))
-          
+
           val gspan = new gSpan
           val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
           println("---------OUTPUT---------")
@@ -90,7 +121,7 @@ object MainProgram {
               rddGraphs.persist(Config.defaultStorageLevel)
 
               println("Thư mục đang được xử lý là: " + strPath)
-              
+
               val gspan = new gSpan
               val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
               rddGraphs.unpersist()
@@ -114,7 +145,7 @@ object MainProgram {
               rddGraphs.persist(Config.defaultStorageLevel)
 
               println("Thư mục đang được xử lý là: " + strPath)
-              
+
               val gspan = new gSpan
               val (miningTime, (s, frequentVertices)) = Timer.timer(gspan.frequentSubgraphMining(rddGraphs))
               rddGraphs.unpersist()
@@ -204,10 +235,17 @@ object MainProgram {
     resString
   }
 
+  def resultToGraph(dfsFinalCode: ListBuffer[FinalDFSCode], frequentVertices: Array[(String, Int, Int)]): Array[Graph] = {
+    if (frequentVertices.length > 0 && dfsFinalCode.length > 0) {
+      return dfsFinalCode.map(code => code.extractGraph(frequentVertices)).toArray
+    } else return null
+  }
+
   def printHelp() = {
     println("Usage: ProgramJarFile [Option] [Arguments]")
     println("       Option:")
     println("              --preprocessData -pd : Preprocess Reuter 21578 data. Arguments: FolderInputPath StopwordFilePath")
+    println("              --topicModeling -tm : Topic Modeling All Document On OrientDB Based On Graph Mining. Arguments: MinSupport MinDistance")
     println("              --gSpan -gs : Frequent Subgraph Mining Using gSpan Algorithm. Arguments: FolderInputPath MinSupport OutputFilePath")
     println("              --gSpanDirectory -gsd : Frequent Subgraph Mining Using gSpan Algorithm For All SubFolder. Arguments: FolderInputPath MinSupport OutputFolderPath")
     println("              --characteristicExtract -ce : Extract topic characteristic. Arguments: FolderInputPath MinDistance FolderOutputPath")

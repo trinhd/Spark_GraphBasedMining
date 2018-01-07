@@ -117,6 +117,61 @@ class CharacteristicExtract {
       if (OutputtoHDFS.writeFile(t._1, s)) println("Kết quả tính được ghi thành công xuống tập tin " + t._1)
     }
   }
+  
+  def characteristicExtractCont(arrFreq: Array[(String, ArrayBuffer[(String, Int)], ArrayBuffer[Graph])]) = {
+    var arrFinalRes = new Array[(String, ArrayBuffer[(String, Int)], ArrayBuffer[Graph])](arrFreq.length)
+
+    var arrMatrixRes = ListBuffer[(Int, Int, Int, Int, Double)]()
+
+    for (i <- 0 until arrFreq.length) {
+      var arrOne = arrFreq(i)._2
+      var arrGraph = arrFreq(i)._3.map((_, 1d)) //arrFreq(i)._3
+      for (j <- 0 until arrFreq.length) {
+        if (i != j) {
+          val arrOneTemp = arrFreq(j)._2.map(_._1)
+          arrOne = arrOne.filterNot(p => {
+            arrOneTemp.contains(p._1)
+          })
+
+          var arrGraphCompute = arrFreq(j)._3
+          for (x <- 0 until arrGraph.length) {
+            for (y <- 0 until arrGraphCompute.length) {
+              var distance = 1d
+              if (!arrMatrixRes.exists(e => (e._1 == j && e._2 == i))) {
+                distance = graphDistance(arrGraph(x)._1, arrGraphCompute(y))
+                arrMatrixRes += ((i, j, x, y, distance))
+              } else {
+                distance = arrMatrixRes.find(e => (e._1 == j && e._2 == i && e._3 == y && e._4 == x)).get._5
+              }
+              if (distance < arrGraph(x)._2) {
+                arrGraph(x) = (arrGraph(x)._1, distance)
+              }
+            }
+          }
+        }
+      }
+
+      arrFinalRes(i) = (arrFreq(i)._1, arrOne, arrGraph.filter(_._2 > Config.minDistance).map(_._1))
+    }
+
+    /*for (t <- arrFinalRes) {
+      var s = ((t._2.length + t._3.length)) + " đồ thị con phổ biến.\n"
+      s += "Trong đó có " + t._2.length + " đỉnh phổ biến.\n"
+      if (!t._3.isEmpty) s += "Và " + t._3.length + " đồ thị con phổ biến được tạo thành từ ít nhất một cạnh.\n"
+      s += "Các đỉnh phổ biến là:\n"
+      s += t._2.map(f => f._1 + " :: " + f._2).mkString("\n")
+      if (!t._3.isEmpty) {
+        s += "\nCác đồ thị con phổ biến là:"
+        var n = 0
+        while (n < t._3.length) {
+          s += "\nĐồ thị con số " + n + ":\n"
+          s += t._3(n).printGraphMatrix()
+          n = n + 1
+        }
+      }
+      if (OutputtoHDFS.writeFile(t._1, s)) println("Kết quả tính được ghi thành công xuống tập tin " + t._1)
+    }*/
+  }
 
   def graphSize(graph: Graph): Int = {
     var size = graph.Graph.size

@@ -14,6 +14,8 @@ import com.orientechnologies.orient.core.db.OPartitionedDatabasePool
 import com.orientechnologies.orient.client.remote.OServerAdmin
 import com.orientechnologies.orient.core.record.impl.ODocument
 import com.orientechnologies.orient.core.exception.OConfigurationException
+import com.orientechnologies.orient.core.sql.query.OSQLSynchQuery
+import com.orientechnologies.orient.core.sql.query.OConcurrentResultSet
 
 class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbUser: String, dbPassword: String, userRoot: String, pwdRoot: String) {
   /*
@@ -29,10 +31,11 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
   //var database = "CoOccurrenceGraph"
   //var dbUser = "admin"
   //var dbPassword = "admin"
-  var labelSubject = "subject"
-  var labelName = "name"
-  var tab_v = "dinh"
-  var tab_e = "cooccurr_with"
+  val labelSubject = "subject"
+  val labelName = "name"
+  val tab_v = "dinh"
+  val tab_e = "cooccurr_with"
+  val tab_doc = "alldoc"  
   //var port     = 2424
   //var userRoot = "root"
   //var pwdRoot = "12345"
@@ -323,11 +326,11 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
     factory
   }
 
-  def insertDoc(factory: OPartitionedDatabasePool, docName: String, data: List[(String, String)]) = {
+  def insertDoc(factory: OPartitionedDatabasePool, data: List[(String, String)]) = {
     val db = factory.acquire()
     db.begin
     try {
-      val doc = new ODocument(docName)
+      val doc = new ODocument(tab_doc)
       data.foreach(item => {
         doc.field(item._1, item._2)
       })
@@ -348,13 +351,13 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
     }
   }
 
-  def insertDocInBatches(factory: OPartitionedDatabasePool, data: List[(String, List[(String, String)])]) = {
+  def insertDocInBatches(factory: OPartitionedDatabasePool, data: List[List[(String, String)]]) = {
     val db = factory.acquire()
     db.begin
     try {
       data.foreach(item => {
-        val doc = new ODocument(item._1)
-        item._2.foreach(subItem => {
+        val doc = new ODocument(tab_doc)
+        item.foreach(subItem => {
           doc.field(subItem._1, subItem._2)
         })
         doc.save
@@ -373,5 +376,25 @@ class OrientDBUtils(hostType: String, hostAddress: String, database: String, dbU
       db.close
       println("All Done!!!")
     }
+  }
+  
+  def queryDoc(factory: OPartitionedDatabasePool, strQuery: String) = {
+    try {
+    val db = factory.acquire
+    val result: OConcurrentResultSet[ODocument] = db.query(new OSQLSynchQuery(strQuery))
+    db.close
+    result
+    } catch {
+      case t: Throwable => {
+        println("************************ ERROR ************************")
+        println("Có LỖI xảy ra!!")
+        t.printStackTrace() // TODO: handle error
+        println("************************ ERROR ************************")
+        null
+      }
+    }/* finally {
+      println("Thực hiện thành công lệnh truy vấn dữ liệu!")
+      println("All Done!!!")
+    }*/
   }
 }
